@@ -11,20 +11,25 @@ datasource db {
 }
 
 model User {
-  id       String  @id @default(cuid())
-  email    String  @unique
-  username String  @unique
-  name     String?
+  id                String    @id @default(cuid())
+  email             String    @unique
+  username          String    @unique
+  name              String?
+  points            Int       @default(30)
+  loginToken        String?
+  loginTokenExpires DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   image       UserImage?
   password    Password?
-  notes       Note[]
   roles       Role[]
   sessions    Session[]
   connections Connection[]
+  ownNote     Note[]       @relation("owner")
+  receiveNote Note[]       @relation("recipient")
+  Note        Note[]
 }
 
 model Note {
@@ -35,10 +40,16 @@ model Note {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  // one to one relationship with the user
+  owner   User   @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   ownerId String
 
+  recipient   User?   @relation("recipient", fields: [recipientId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  recipientId String?
+
   images NoteImage[]
+  User   User?       @relation(fields: [userId], references: [id])
+  userId String?
 
   // non-unique foreign key
   @@index([ownerId])
