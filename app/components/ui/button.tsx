@@ -1,14 +1,15 @@
 // Button.tsx
 
+import { cn } from '#app/utils/misc.js'
+import { cloneElement } from '#app/utils/ui'
+import { Link } from '@remix-run/react'
 import {
 	button,
 	buttonIcon as icon,
-	type ButtonProps as ButtonVariantsProps,
 	type ButtonIconProps,
+	type ButtonProps as ButtonVariantsProps,
 } from '@tailus/themer'
 import React from 'react'
-import { cloneElement } from '#app/utils/ui'
-import { cn } from '#app/utils/misc.js'
 
 export type Root = typeof Root
 export type Icon = typeof Icon
@@ -20,6 +21,7 @@ export interface ButtonProps
 	disabled?: boolean
 	href?: string
 	isIcon?: boolean
+	type?: 'button' | 'submit' | 'reset'
 }
 
 export interface IconProps
@@ -67,11 +69,12 @@ export const Root = React.forwardRef<
 			href,
 			children,
 			isIcon,
+			type = 'button',
 			...props
 		},
 		forwardedRef,
 	) => {
-		const Component = href ? 'a' : 'button'
+		const isLink = href ? true : false
 		const iconOnly =
 			isIcon ||
 			React.Children.toArray(children).some(
@@ -82,10 +85,28 @@ export const Root = React.forwardRef<
 			)
 		const buttonSize = iconOnly ? 'iconOnlyButtonSize' : 'size'
 
+		if (isLink) {
+			return (
+				<Link
+					to={href ?? '/'}
+					className={button[variant as keyof typeof button]({
+						intent,
+						[buttonSize]: size,
+						className: cn(className, {
+							'aspect-square': iconOnly,
+						}),
+					})}
+					{...props}
+				>
+					{children}
+				</Link>
+			)
+		}
+
 		return (
-			<Component
+			<button
 				ref={forwardedRef}
-				href={href}
+				type={type}
 				className={button[variant as keyof typeof button]({
 					intent,
 					[buttonSize]: size,
@@ -97,7 +118,7 @@ export const Root = React.forwardRef<
 				disabled={disabled}
 			>
 				{children}
-			</Component>
+			</button>
 		)
 	},
 )

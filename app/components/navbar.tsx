@@ -1,10 +1,10 @@
 import { cn } from '#app/utils/misc.js'
-import { useState, useEffect } from 'react'
+import { useOptionalUser } from '#app/utils/user.js'
+import { useLocation, useMatches } from '@remix-run/react'
+import { useEffect, useState } from 'react'
+import { SearchBar } from './search-bar'
 import Button from './ui/button'
 import { Icon } from './ui/icon'
-import { useLocation, useMatches } from '@remix-run/react'
-import { useOptionalUser } from '#app/utils/user.js'
-import { SearchBar } from './search-bar'
 
 type NavbarItem = {
 	title: string
@@ -54,7 +54,7 @@ export function SiteHeader() {
 			<header
 				data-state={isOpen ? 'open' : 'closed'}
 				data-shade="glassy"
-				className="card-shadow group fixed inset-x-2 top-2 z-10 rounded border bg-white/50 dark:border-white/5 dark:bg-white/5 lg:relative lg:inset-x-0 lg:top-4 lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none lg:dark:bg-transparent"
+				className="group card-shadow fixed inset-x-2 top-2 z-10 rounded border bg-white/50 dark:border-white/5 dark:bg-white/5 lg:relative lg:inset-x-0 lg:top-4 lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none lg:dark:bg-transparent"
 				style={{
 					backdropFilter: 'blur(20px)',
 				}}
@@ -101,7 +101,7 @@ export function SiteHeader() {
 						</div>
 						<nav
 							id="navItems"
-							className="lg:feedback-shadow -mx-3 h-[--nav-items-height] w-full overflow-hidden transition-[height] lg:fixed lg:inset-x-0 lg:top-6 lg:m-auto lg:mx-auto lg:flex lg:h-fit lg:w-fit lg:rounded lg:border lg:bg-white/50 lg:px-2 lg:py-2 lg:backdrop-blur-3xl lg:dark:border-white/5 lg:dark:bg-white/5"
+							className="-mx-3 h-[--nav-items-height] w-full overflow-hidden transition-[height] lg:feedback-shadow lg:fixed lg:inset-x-0 lg:top-6 lg:m-auto lg:mx-auto lg:flex lg:h-fit lg:w-fit lg:rounded lg:border lg:bg-white/50 lg:px-2 lg:py-2 lg:backdrop-blur-3xl lg:dark:border-white/5 lg:dark:bg-white/5"
 						>
 							<div
 								className="absolute left-1.5 top-1.5 size-1 rounded-full bg-gray-950/10 dark:bg-white/20 lg:left-1 lg:top-1 lg:size-0.5"
@@ -136,7 +136,12 @@ export function SiteHeader() {
 
 					<div className="hidden gap-2 lg:flex">
 						{user ? (
-							searchBar
+							<Button.Root intent="secondary" href="/transfer">
+								<Button.Icon>
+									<Icon name="plus" />
+								</Button.Icon>
+								<Button.Label>Give love</Button.Label>
+							</Button.Root>
 						) : (
 							<Button.Root
 								href="/login"

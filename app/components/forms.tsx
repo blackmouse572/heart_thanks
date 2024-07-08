@@ -1,7 +1,8 @@
+import Checkbox, { CheckboxProps } from '#app/components/ui/checkbox'
+import Label from '#app/components/ui/label.js'
 import { useInputControl } from '@conform-to/react'
 import { REGEXP_ONLY_DIGITS_AND_CHARS, type OTPInputProps } from 'input-otp'
 import React, { useId } from 'react'
-import { Checkbox, type CheckboxProps } from './ui/checkbox.tsx'
 import {
 	InputOTP,
 	InputOTPGroup,
@@ -9,7 +10,6 @@ import {
 	InputOTPSlot,
 } from './ui/input-otp.tsx'
 import Input, { type InputProps } from './ui/input.tsx'
-import { Label } from './ui/label.tsx'
 import { Textarea } from './ui/textarea.tsx'
 
 export type ListOfErrors = Array<string | null | undefined> | null | undefined
@@ -26,7 +26,7 @@ export function ErrorList({
 	return (
 		<ul id={id} className="flex flex-col gap-1">
 			{errorsToRender.map((e) => (
-				<li key={e} className="text-[10px] text-foreground-destructive">
+				<li key={e} className="text-foreground-destructive text-[10px]">
 					{e}
 				</li>
 			))}
@@ -57,9 +57,11 @@ export function Field({
 				aria-describedby={errorId}
 				{...inputProps}
 			/>
-			<div className="min-h-[32px] px-4 pb-3 pt-1">
-				{errorId ? <ErrorList id={errorId} errors={errors} /> : null}
-			</div>
+			{errorId && (
+				<div className="min-h-[32px] pb-3 pt-1 text-danger-500">
+					<ErrorList id={errorId} errors={errors} />
+				</div>
+			)}
 		</div>
 	)
 }
@@ -168,7 +170,7 @@ export function CheckboxField({
 	return (
 		<div className={className}>
 			<div className="flex gap-2">
-				<Checkbox
+				<Checkbox.Root
 					{...checkboxProps}
 					id={id}
 					aria-invalid={errorId ? true : undefined}
@@ -191,7 +193,7 @@ export function CheckboxField({
 				<label
 					htmlFor={id}
 					{...labelProps}
-					className="self-center text-body-xs text-muted-foreground"
+					className="text-body-xs text-muted-foreground self-center"
 				/>
 			</div>
 			<div className="px-4 pb-3 pt-1">

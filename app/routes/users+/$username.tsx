@@ -1,13 +1,12 @@
-import { invariantResponse } from '@epic-web/invariant'
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
-import { Form, Link, useLoaderData, type MetaFunction } from '@remix-run/react'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Spacer } from '#app/components/spacer.tsx'
-import { Button } from '#app/components/ui/button.tsx'
-import { Icon } from '#app/components/ui/icon.tsx'
+import Button from '#app/components/ui/button.js'
 import { prisma } from '#app/utils/db.server.ts'
 import { getUserImgSrc } from '#app/utils/misc.tsx'
 import { useOptionalUser } from '#app/utils/user.ts'
+import { invariantResponse } from '@epic-web/invariant'
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import { Form, Link, useLoaderData, type MetaFunction } from '@remix-run/react'
 
 export async function loader({ params }: LoaderFunctionArgs) {
 	const user = await prisma.user.findFirst({
@@ -39,14 +38,14 @@ export default function ProfileRoute() {
 		<div className="container mb-48 mt-36 flex flex-col items-center justify-center">
 			<Spacer size="4xs" />
 
-			<div className="container flex flex-col items-center rounded-3xl bg-muted p-12">
+			<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
 				<div className="relative w-52">
 					<div className="absolute -top-40">
 						<div className="relative">
 							<img
 								src={getUserImgSrc(data.user.image?.id)}
 								alt={userDisplayName}
-								className="h-52 w-52 rounded-full object-cover"
+								className="h-52 w-52 rounded-full object-cover outline outline-primary-200"
 							/>
 						</div>
 					</div>
@@ -56,40 +55,38 @@ export default function ProfileRoute() {
 
 				<div className="flex flex-col items-center">
 					<div className="flex flex-wrap items-center justify-center gap-4">
-						<h1 className="text-center text-h2">{userDisplayName}</h1>
+						<h1 className="text-h2 text-center">{userDisplayName}</h1>
 					</div>
-					<p className="mt-2 text-center text-muted-foreground">
+					<p className="text-muted-foreground mt-2 text-center">
 						Joined {data.userJoinedDisplay}
 					</p>
 					{isLoggedInUser ? (
 						<Form action="/logout" method="POST" className="mt-3">
-							<Button type="submit" variant="link" size="pill">
-								<Icon name="exit" className="scale-125 max-md:scale-150">
-									Logout
-								</Icon>
-							</Button>
+							<Button.Root type="submit" variant="ghost" size="md">
+								<Button.Label>Logout</Button.Label>
+							</Button.Root>
 						</Form>
 					) : null}
 					<div className="mt-10 flex gap-4">
 						{isLoggedInUser ? (
 							<>
-								<Button asChild>
+								<Button.Root>
 									<Link to="notes" prefetch="intent">
 										My notes
 									</Link>
-								</Button>
-								<Button asChild>
+								</Button.Root>
+								<Button.Root>
 									<Link to="/settings/profile" prefetch="intent">
 										Edit profile
 									</Link>
-								</Button>
+								</Button.Root>
 							</>
 						) : (
-							<Button asChild>
+							<Button.Root>
 								<Link to="notes" prefetch="intent">
 									{userDisplayName}'s notes
 								</Link>
-							</Button>
+							</Button.Root>
 						)}
 					</div>
 				</div>

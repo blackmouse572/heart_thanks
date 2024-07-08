@@ -1,41 +1,37 @@
 import * as CheckboxPrimitive from '@radix-ui/react-checkbox'
-import * as React from 'react'
+import {
+	checkbox,
+	fancyCheckbox,
+	type CheckboxProps as CheckboxVariants,
+} from '@tailus/themer'
+import React, { forwardRef } from 'react'
 
-import { cn } from '#app/utils/misc.tsx'
-
-export type CheckboxProps = Omit<
-	React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>,
-	'type'
-> & {
-	type?: string
+export interface CheckboxProps
+	extends CheckboxVariants,
+		Omit<
+			React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>,
+			'className'
+		> {
+	className?: string
+	fancy?: boolean
 }
-
-const Checkbox = React.forwardRef<
+const CheckboxRoot = forwardRef<
 	React.ElementRef<typeof CheckboxPrimitive.Root>,
-	React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root>
->(({ className, ...props }, ref) => (
-	<CheckboxPrimitive.Root
-		ref={ref}
-		className={cn(
-			'peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground',
-			className,
-		)}
-		{...props}
-	>
-		<CheckboxPrimitive.Indicator
-			className={cn('flex items-center justify-center text-current')}
-		>
-			<svg viewBox="0 0 8 8">
-				<path
-					d="M1,4 L3,6 L7,2"
-					stroke="currentcolor"
-					strokeWidth="1"
-					fill="none"
-				/>
-			</svg>
-		</CheckboxPrimitive.Indicator>
-	</CheckboxPrimitive.Root>
-))
-Checkbox.displayName = CheckboxPrimitive.Root.displayName
+	React.ComponentPropsWithoutRef<typeof CheckboxPrimitive.Root> & CheckboxProps
+>(({ className, intent, fancy, ...props }: CheckboxProps, forwardedRef) => {
+	const classes = fancy
+		? fancyCheckbox({ intent, className })
+		: checkbox({ intent, className })
+	return (
+		<CheckboxPrimitive.Root ref={forwardedRef} className={classes} {...props} />
+	)
+})
 
-export { Checkbox }
+const CheckboxIndicator = CheckboxPrimitive.Indicator
+
+export { CheckboxIndicator, CheckboxRoot }
+
+export default {
+	Root: CheckboxRoot,
+	Indicator: CheckboxIndicator,
+}

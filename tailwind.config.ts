@@ -1,4 +1,4 @@
-import { palettes, rounded, shade, components, palette } from '@tailus/themer'
+import { components, palette, palettes, rounded, shade } from '@tailus/themer'
 import { type Config } from 'tailwindcss'
 import animatePlugin from 'tailwindcss-animate'
 import radixPlugin from 'tailwindcss-radix'
