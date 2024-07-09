@@ -22,6 +22,9 @@ import { checkHoneypot } from '#app/utils/honeypot.server.ts'
 import { useIsPending } from '#app/utils/misc.tsx'
 import { PasswordSchema, UsernameSchema } from '#app/utils/user-validation.ts'
 import { handleNewSession } from './login.server.ts'
+import Card from '#app/components/ui/card.js'
+import { Caption } from '#app/components/ui/caption.js'
+import { Text } from '#app/components/ui/text.js'
 
 const LoginFormSchema = z.object({
 	username: UsernameSchema,
@@ -94,7 +97,7 @@ export default function LoginPage() {
 
 	return (
 		<div className="flex min-h-full flex-col justify-center pb-32 pt-20">
-			<div className="mx-auto w-full max-w-md">
+			<Card className="mx-auto w-full max-w-md" variant="outlined">
 				<div className="flex flex-col gap-3 text-center">
 					<h1 className="text-h1">Welcome back!</h1>
 					<p className="text-body-md text-muted-foreground">
@@ -129,23 +132,22 @@ export default function LoginPage() {
 								errors={fields.password.errors}
 							/>
 
-							<div className="flex justify-between">
+							<div className="mt-3 flex justify-between">
 								<CheckboxField
 									labelProps={{
 										htmlFor: fields.remember.id,
 										children: 'Remember me',
 									}}
-									buttonProps={getInputProps(fields.remember, {
-										type: 'checkbox',
-									})}
+									buttonProps={
+										getInputProps(fields.remember, {
+											type: 'checkbox',
+										}) as any
+									}
 									errors={fields.remember.errors}
 								/>
 								<div>
-									<Link
-										to="/forgot-password"
-										className="text-body-xs font-semibold"
-									>
-										Forgot password?
+									<Link to="/forgot-password">
+										<Caption>Forgot password?</Caption>
 									</Link>
 								</div>
 							</div>
@@ -166,7 +168,7 @@ export default function LoginPage() {
 								</StatusButton>
 							</div>
 						</Form>
-						<ul className="mt-5 flex flex-col gap-5 border-b-2 border-t-2 border-border py-3">
+						<ul className="border-border mt-5 flex flex-col gap-5 border-b-2 border-t-2 py-3">
 							{providerNames.map((providerName) => (
 								<li key={providerName}>
 									<ProviderConnectionForm
@@ -178,7 +180,9 @@ export default function LoginPage() {
 							))}
 						</ul>
 						<div className="flex items-center justify-center gap-2 pt-6">
-							<span className="text-muted-foreground">New here?</span>
+							<Text className="cursor-default" size={'sm'}>
+								New here?
+							</Text>
 							<Link
 								to={
 									redirectTo
@@ -186,12 +190,14 @@ export default function LoginPage() {
 										: '/signup'
 								}
 							>
-								Create an account
+								<Text weight={'bold'} size={'sm'}>
+									Create an account
+								</Text>
 							</Link>
 						</div>
 					</div>
 				</div>
-			</div>
+			</Card>
 		</div>
 	)
 }

@@ -38,7 +38,7 @@ export const Icon: React.FC<IconProps> = ({
 		<>
 			{cloneElement(
 				children as React.ReactElement,
-				icon({ size, type, className }),
+				icon({ size, type, className: cn('ml-0', className) }),
 			)}
 		</>
 	)

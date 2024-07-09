@@ -11,6 +11,7 @@ import {
 } from './ui/input-otp.tsx'
 import Input, { type InputProps } from './ui/input.tsx'
 import { Textarea } from './ui/textarea.tsx'
+import { Icon } from './ui/icon.tsx'
 
 export type ListOfErrors = Array<string | null | undefined> | null | undefined
 
@@ -169,7 +170,7 @@ export function CheckboxField({
 
 	return (
 		<div className={className}>
-			<div className="flex gap-2">
+			<div className="flex items-center gap-2">
 				<Checkbox.Root
 					{...checkboxProps}
 					id={id}
@@ -189,8 +190,12 @@ export function CheckboxField({
 						buttonProps.onBlur?.(event)
 					}}
 					type="button"
-				/>
-				<label
+				>
+					<Checkbox.Indicator asChild>
+						<Icon className="size-3.5" name="check" />
+					</Checkbox.Indicator>
+				</Checkbox.Root>
+				<Label
 					htmlFor={id}
 					{...labelProps}
 					className="text-body-xs text-muted-foreground self-center"

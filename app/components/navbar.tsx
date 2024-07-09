@@ -1,6 +1,6 @@
 import { cn } from '#app/utils/misc.js'
 import { useOptionalUser } from '#app/utils/user.js'
-import { useLocation, useMatches } from '@remix-run/react'
+import { Link, useLocation, useMatches } from '@remix-run/react'
 import { useEffect, useState } from 'react'
 import { SearchBar } from './search-bar'
 import Button from './ui/button'
@@ -20,19 +20,16 @@ const NAVBAR_ITEMS: NavbarItem[] = [
 	},
 
 	{
-		title: 'Contact',
-		href: '/contact',
-		icon: <Icon name="cross-1" />,
+		title: 'Transfer History',
+		href: '/history',
+		icon: <Icon name="transfer" />,
 	},
 ]
 
 export function SiteHeader() {
 	const [isOpen, setIsOpen] = useState(false)
 	const { pathname } = useLocation()
-	const matches = useMatches()
-	const isOnSearchPage = matches.find((m) => m.id === 'routes/users+/index')
 	const user = useOptionalUser()
-	const searchBar = isOnSearchPage ? null : <SearchBar status="idle" />
 
 	useEffect(() => {
 		const root = document.querySelector('body') as HTMLElement
@@ -62,15 +59,11 @@ export function SiteHeader() {
 				<div className="mx-auto max-w-6xl px-6 py-3 sm:py-4 lg:flex lg:justify-between">
 					<div className="lg:flex lg:items-center lg:gap-8">
 						<div className="flex w-full items-center justify-between lg:w-fit">
-							<a href="/" aria-label="home">
+							<Link to="/" aria-label="home">
 								<Icon name="envelope-closed" />
-							</a>
+							</Link>
 							<div className="flex gap-2 lg:hidden">
-								<Button.Root
-									href="/examples/forms/login2"
-									size="sm"
-									intent="neutral"
-								>
+								<Button.Root href="login" size="sm" intent="neutral">
 									<Button.Label>Login</Button.Label>
 								</Button.Root>
 
@@ -125,9 +118,12 @@ export function SiteHeader() {
 									'space-y-6 py-4 lg:flex lg:gap-1 lg:space-y-0 lg:py-0',
 								)}
 							>
-								{NAVBAR_ITEMS.map(({ href, title }) => (
+								{NAVBAR_ITEMS.map(({ href, title, icon }) => (
 									<NavLink isActive={href === pathname} key={href} href={href}>
-										{title}
+										<div className="flex items-center gap-1">
+											{icon}
+											{title}
+										</div>
 									</NavLink>
 								))}
 							</div>

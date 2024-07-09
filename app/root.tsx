@@ -14,17 +14,17 @@ import {
 	Scripts,
 	ScrollRestoration,
 	useLoaderData,
-	useMatches,
 	useSubmit,
 } from '@remix-run/react'
 import { withSentry } from '@sentry/remix'
 import { useRef } from 'react'
 import { HoneypotProvider } from 'remix-utils/honeypot/react'
 import { GeneralErrorBoundary } from './components/error-boundary.tsx'
+import { SiteHeader } from './components/navbar.tsx'
 import { EpicProgress } from './components/progress-bar.tsx'
-import { SearchBar } from './components/search-bar.tsx'
 import { useToast } from './components/toaster.tsx'
 import Button from './components/ui/button.tsx'
+
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -46,8 +46,8 @@ import { useNonce } from './utils/nonce-provider.ts'
 import { type Theme, getTheme } from './utils/theme.server.ts'
 import { makeTimings, time } from './utils/timing.server.ts'
 import { getToast } from './utils/toast.server.ts'
-import { useOptionalUser, useUser } from './utils/user.ts'
-import { SiteHeader } from './components/navbar.tsx'
+import { useUser } from './utils/user.ts'
+import sonnerStyles from '#app/components/ui/sonner.css?url'
 
 export const links: LinksFunction = () => {
 	return [
@@ -67,6 +67,7 @@ export const links: LinksFunction = () => {
 		} as const, // necessary to make typescript happy
 		{ rel: 'icon', type: 'image/svg+xml', href: '/favicons/favicon.svg' },
 		{ rel: 'stylesheet', href: tailwindStyleSheetUrl },
+		{ rel: 'stylesheet', href: sonnerStyles },
 	].filter(Boolean)
 }
 
@@ -222,7 +223,7 @@ function App() {
 					<ThemeSwitch userPreference={data.requestInfo.userPrefs.theme} />
 				</div>
 			</div>
-			<EpicToaster closeButton position="top-center" theme={theme} />
+			<EpicToaster closeButton position="bottom-right" theme={theme} />
 			<EpicProgress />
 		</Document>
 	)

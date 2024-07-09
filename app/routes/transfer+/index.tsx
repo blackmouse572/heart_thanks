@@ -1,3 +1,24 @@
+import {
+	FieldMetadata,
+	getFieldsetProps,
+	getFormProps,
+	getInputProps,
+	useForm,
+	useInputControl,
+} from '@conform-to/react'
+import { getZodConstraint, parseWithZod } from '@conform-to/zod'
+import { type User } from '@prisma/client'
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import {
+	Await,
+	defer,
+	Form,
+	useActionData,
+	useLoaderData,
+	useNavigation,
+} from '@remix-run/react'
+import React, { useCallback, useEffect } from 'react'
+import { z } from 'zod'
 import { Field } from '#app/components/forms.tsx'
 import Button from '#app/components/ui/button.js'
 import { Caption } from '#app/components/ui/caption.tsx'
@@ -17,24 +38,16 @@ import { Title } from '#app/components/ui/title.tsx'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.js'
 import { cn, getUserImgSrc } from '#app/utils/misc.js'
-import {
-	getFieldsetProps,
-	getFormProps,
-	getInputProps,
-	useForm,
-} from '@conform-to/react'
-import { getZodConstraint, parseWithZod } from '@conform-to/zod'
-import { User } from '@prisma/client'
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
-import { defer, Form, useActionData, useLoaderData } from '@remix-run/react'
-import React from 'react'
-import { z } from 'zod'
+import { HoneypotInputs } from 'remix-utils/honeypot/react'
+import { checkHoneypot } from '#app/utils/honeypot.server.js'
+import { transferHandler } from './transfer.server'
+import Banner from '#app/components/ui/banner.js'
+import { redirectWithToast } from '#app/utils/toast.server.js'
 
 const TransferSchema = z.object({
 	amount: z.number(),
 	recipientId: z.string(),
 })
-const waitFor = (ms: number) => new Promise((r) => setTimeout(r, ms))
 export async function loader({ request }: LoaderFunctionArgs) {
 	// require the user to be logged in
 	// if they are not, this will redirect them to the login page
@@ -42,40 +55,106 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		redirectTo: '/login',
 	})
 	const user = await prisma.user.findUnique({ where: { id: userId } })
-	const others = await prisma.user.findMany({
-		where: {
-			NOT: {
-				id: userId,
-			},
-		},
-		include: {
-			image: {
-				select: {
-					id: true,
-					altText: true,
+	const others = prisma.user
+		.findMany({
+			where: {
+				NOT: {
+					id: userId,
 				},
 			},
-		},
-	})
+			include: {
+				image: {
+					select: {
+						id: true,
+						altText: true,
+					},
+				},
+			},
+		})
+		.then((u) => u)
 
 	return defer({ user, others })
 }
 
 export async function action({ request }: LoaderFunctionArgs) {
-	return json(
-		{
-			result: {
-				amount: 100,
-				recipientId: '123',
-			},
-		},
-		{ status: 200 },
-	)
+	const userId = await requireUserId(request)
+	const formData = await request.formData()
+	let receiver: User, sender: User
+	let amount: number
+	checkHoneypot(formData)
+	const submission = await parseWithZod(formData, {
+		schema: (intent) =>
+			TransferSchema.transform(async (data, ctx) => {
+				if (intent !== null) return { ...data, session: null }
+
+				const [senderUser, receiverUser] = await Promise.all([
+					prisma.user.findUnique({ where: { id: userId } }),
+					prisma.user.findUnique({
+						where: { id: data.recipientId },
+					}),
+				])
+				if (!senderUser || !receiverUser) {
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						message: 'Invalid user',
+					})
+					return z.NEVER
+				}
+
+				// assign the sender and receiver to the outer scope
+				sender = senderUser
+				receiver = receiverUser
+				amount = data.amount
+
+				if (senderUser?.points < data.amount) {
+					ctx.addIssue({
+						code: z.ZodIssueCode.too_big,
+						maximum: senderUser.points,
+						inclusive: true,
+						type: 'number',
+						path: ['amount'],
+						message: 'Insufficient points',
+					})
+					return z.NEVER
+				}
+
+				return { ...data }
+			}),
+		async: true,
+	})
+	if (submission.status !== 'success') {
+		return json(
+			{ result: submission.reply(), message: '' },
+			{ status: submission.status === 'error' ? 400 : 200 },
+		)
+	}
+	try {
+		await transferHandler({
+			sender: sender!,
+			receiver: receiver!,
+			amount: amount!,
+		})
+		return redirectWithToast('/transfer', {
+			title: 'Transfer Successful',
+			description: `You have successfully transferred ${amount!} points to ${receiver!.username}`,
+			type: 'success',
+		})
+	} catch (e) {
+		console.error(e)
+		return redirectWithToast('/transfer', {
+			title: 'Transfer Failed',
+			description: 'An error occurred while transferring points',
+			type: 'error',
+		})
+	}
 }
 
 function TransferPage() {
 	const { others, user } = useLoaderData<typeof loader>()
 	const actionData = useActionData<typeof action>()
+	const navigation = useNavigation()
+	const isSubmitting =
+		navigation.state !== 'idle' || navigation.formAction === '/transfer'
 	const [form, fields] = useForm({
 		id: 'transfer-form',
 		constraint: getZodConstraint(TransferSchema),
@@ -88,12 +167,17 @@ function TransferPage() {
 	return (
 		<div className="container mb-48 mt-36 flex flex-col items-center justify-center gap-6">
 			<Card variant="outlined">
-				<Title as="h2" size="lg" weight="medium" className="mb-1">
-					Transfer Your Heart 💖
-				</Title>
-				<Text size="sm">
-					Appriciate the love and support from your colleagues
-				</Text>
+				<div className="space-y-4">
+					<div className="space-y-2">
+						<Title as="h2" size="lg" weight="medium" className="mb-1">
+							Transfer Your Heart 💖
+						</Title>
+						<Text size="sm">
+							Appriciate the love and support from your colleagues
+						</Text>
+					</div>
+					<ErrorAlert actionData={actionData} />
+				</div>
 
 				<div className="mt-6 grid gap-6 divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0">
 					<div className="">
@@ -103,53 +187,94 @@ function TransferPage() {
 							<div className="flex items-center gap-1.5 [--body-text-color:theme(colors.success.600)] dark:[--body-text-color:theme(colors.success.400)]"></div>
 						</div>
 					</div>
-					<div className="w-full min-w-[500px] pt-6 sm:pl-6 sm:pt-0">
+					<div className="w-full pt-6 sm:pl-6 sm:pt-0">
 						<Caption as="span">New Customers</Caption>
-						<Form
-							action="/transfer"
-							method="post"
-							{...getFormProps(form)}
-							className="space-y-8"
-						>
-							<Field
-								labelProps={{
-									htmlFor: fields.amount.toString(),
-									children: 'Amount',
-								}}
-								inputProps={{
-									...getInputProps(fields.amount, { type: 'number' }),
-									autoComplete: 'amount',
-									className: 'lowercase',
-									max: user?.points,
-									min: 1,
-								}}
-								errors={fields.amount.errors}
-							/>
-							<UserSelector
-								users={others as unknown as User[]}
-								onSelect={(user) => getFieldsetProps(fields.recipientId)}
-							/>
+						<Form action="/transfer" method="post" {...getFormProps(form)}>
+							<HoneypotInputs />
+							<fieldset disabled={isSubmitting} className="space-y-8">
+								<Field
+									labelProps={{
+										htmlFor: fields.amount.id,
+										children: 'Amount',
+									}}
+									inputProps={{
+										...getInputProps(fields.amount, { type: 'number' }),
+										autoComplete: 'amount',
+										className: 'lowercase',
+										max: user?.points,
+										min: 1,
+									}}
+									errors={fields.amount.errors}
+								/>
+								<React.Suspense fallback={<p>loading</p>}>
+									<Await resolve={others} errorElement={<p>Error</p>}>
+										{(users) => {
+											return (
+												<UserSelector
+													field={fields.recipientId}
+													users={users as any}
+												/>
+											)
+										}}
+									</Await>
+								</React.Suspense>
 
-							<Button.Root type="submit" variant="solid" intent="primary">
-								<Button.Label>Transfer</Button.Label>
-							</Button.Root>
+								<Button.Root
+									type="submit"
+									variant="solid"
+									intent="primary"
+									className="flex-end"
+								>
+									<Button.Label>Transfer</Button.Label>
+								</Button.Root>
+							</fieldset>
 						</Form>
 					</div>
 				</div>
-				<UserSelector users={[]} onSelect={(user) => {}} />
 			</Card>
 		</div>
 	)
 }
+function ErrorAlert({ actionData }: any) {
+	const message = actionData?.message
+	if (!message) return null
+	return (
+		<Banner.Root intent="danger" className="p-[--toast-padding]">
+			<Banner.Content>
+				<Icon name="bug" className="size-5 text-[--body-text-color]" />
+				<div className="space-y-2">
+					<Text size="sm" className="my-0 text-danger-800 dark:text-danger-300">
+						{message}
+					</Text>
+				</div>
+			</Banner.Content>
+		</Banner.Root>
+	)
+}
 type UserSelectorProps = {
 	users: (User & { image: { id: string } })[]
-	onSelect: (user: User) => void
+	field: FieldMetadata
 }
-function UserSelector({ onSelect, users }: UserSelectorProps) {
+function UserSelector({ field, users }: UserSelectorProps) {
 	const [open, setOpen] = React.useState(false)
 	const [value, setValue] = React.useState(users[0]?.id ?? '')
-	const currentUser = users.find((user) => user.id === value)
-	if (!users?.length) return users.toString()
+	const control = useInputControl(field as any)
+
+	const currentUser = users?.find((user) => user.id === value)
+
+	useEffect(() => {
+		// sync
+		control.change(value)
+	}, [])
+
+	const onChange = useCallback((newValue: string) => {
+		const [id] = newValue.split('|')
+		const fallback = id ?? users[0]!.id
+		setValue(fallback)
+		setOpen(false)
+		control.change(fallback)
+	}, [])
+
 	return (
 		<Popover.Root open={open} onOpenChange={setOpen}>
 			<Popover.Trigger asChild>
@@ -157,7 +282,7 @@ function UserSelector({ onSelect, users }: UserSelectorProps) {
 					size="lg"
 					aria-expanded={open}
 					variant="outlined"
-					className="h-auto w-full justify-between"
+					className="h-auto min-h-9 w-[400px] justify-between overflow-hidden"
 				>
 					<Button.Label>
 						{currentUser ? (
@@ -178,7 +303,7 @@ function UserSelector({ onSelect, users }: UserSelectorProps) {
 					</Button.Label>
 					<Button.Icon>
 						<Icon
-							name="arrow-right"
+							name="chevron-down"
 							className="ml-2 h-4 w-4 shrink-0 opacity-50"
 						/>
 					</Button.Icon>
@@ -198,11 +323,7 @@ function UserSelector({ onSelect, users }: UserSelectorProps) {
 										framework.username,
 										framework.name,
 									].join('|')}
-									onSelect={(currentValue: string) => {
-										const [id] = currentValue.split('|')
-										setValue(id || users[0]!.id)
-										setOpen(false)
-									}}
+									onSelect={onChange}
 									aria-disabled={undefined}
 									data-disabled={undefined}
 									className="space-x-8"

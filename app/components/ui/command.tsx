@@ -1,12 +1,12 @@
-import Dialog from '#app/components/ui/dialog.tsx'
 import { type DialogProps } from '@radix-ui/react-dialog'
+import { button, gradientCard } from '@tailus/themer'
 import { Command as CommandPrimitive } from 'cmdk'
 import * as React from 'react'
 
-import Button, { ButtonProps } from '#app/components/ui/button.js'
+import Button, { type ButtonProps } from '#app/components/ui/button.js'
+import Dialog from '#app/components/ui/dialog.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { cn } from '#app/utils/misc.tsx'
-import { button, gradientCard } from '@tailus/themer'
 
 const Command = React.forwardRef<
 	React.ElementRef<typeof CommandPrimitive>,
@@ -15,7 +15,10 @@ const Command = React.forwardRef<
 	return (
 		<CommandPrimitive
 			ref={ref}
-			className={cn('flex h-full w-full flex-col overflow-hidden', className)}
+			className={cn(
+				'flex h-full w-full flex-col overflow-hidden rounded-[--btn-radius] border',
+				className,
+			)}
 			{...props}
 		/>
 	)
@@ -141,7 +144,7 @@ const CommandItem = React.forwardRef<
 			asChild
 			{...props}
 		>
-			<Button.Root className="h-auto min-h-fit w-full items-center justify-start rounded-none">
+			<Button.Root className="h-auto min-h-fit w-full items-center justify-start rounded-none last:rounded-b-[--btn-radius]">
 				{props.children}
 			</Button.Root>
 		</CommandPrimitive.Item>
