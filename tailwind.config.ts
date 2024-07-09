@@ -1,4 +1,11 @@
-import { components, palette, palettes, rounded, shade } from '@tailus/themer'
+import {
+	animations,
+	components,
+	palette,
+	palettes,
+	rounded,
+	shade,
+} from '@tailus/themer'
 import { type Config } from 'tailwindcss'
 import animatePlugin from 'tailwindcss-animate'
 import radixPlugin from 'tailwindcss-radix'
@@ -23,5 +30,13 @@ export default {
 		// extend: extendedTheme,
 	},
 	// presets: [marketingPreset],
-	plugins: [rounded, shade, components, animatePlugin, radixPlugin, palette],
+	plugins: [
+		rounded,
+		shade,
+		components,
+		animatePlugin,
+		radixPlugin,
+		palette,
+		animations,
+	],
 } satisfies Config

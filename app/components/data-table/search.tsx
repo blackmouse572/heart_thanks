@@ -1,11 +1,11 @@
-import Label from '#app/components/ui/label.tsx'
-import { useDebounce, useIsPending } from '#app/utils/misc.tsx'
-import { Form, useSearchParams, useSubmit } from '@remix-run/react'
+import Button from '#app/components/ui/button.js'
+import { Icon } from '#app/components/ui/icon.js'
+import { Input } from '#app/components/ui/input.js'
+import Label from '#app/components/ui/label.js'
+import { StatusButton } from '#app/components/ui/status-button.js'
+import { useDebounce, useIsPending } from '#app/utils/misc.js'
+import { Form, useLocation, useSearchParams, useSubmit } from '@remix-run/react'
 import { useId } from 'react'
-import Button from './ui/button.tsx'
-import { Icon } from './ui/icon.tsx'
-import { Input } from './ui/input.tsx'
-import { StatusButton } from './ui/status-button.tsx'
 
 export function SearchBar({
 	status,
@@ -18,6 +18,7 @@ export function SearchBar({
 }) {
 	const id = useId()
 	const [searchParams] = useSearchParams()
+	const location = useLocation()
 	const submit = useSubmit()
 	const isSubmitting = useIsPending({
 		formMethod: 'GET',
@@ -31,7 +32,7 @@ export function SearchBar({
 	return (
 		<Form
 			method="GET"
-			action="/users"
+			action={location.pathname}
 			className="flex flex-wrap items-center justify-center gap-2"
 			onChange={(e) => autoSubmit && handleFormChange(e.currentTarget)}
 		>

@@ -1,17 +1,17 @@
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
-import { useLoaderData } from '@remix-run/react'
-import { type ColumnDef } from '@tanstack/react-table'
+import Checkbox from '#app/components/checkbox'
+import DataTable from '#app/components/data-table/data-table.js'
 import { Caption } from '#app/components/ui/caption.js'
-import { Title } from '#app/components/ui/title.js'
+import { Icon } from '#app/components/ui/icon.js'
+import { Text } from '#app/components/ui/text'
 import UserAvatar from '#app/components/user-avatar.js'
 import { requireUserId } from '#app/utils/auth.server.js'
 import { prisma } from '#app/utils/db.server.js'
 import { getMetadata } from '#app/utils/request.server.js'
-import DataTable from './data-table'
-import { Text } from '#app/components/ui/text'
-import Checkbox from '#app/components/checkbox'
-import { Icon } from '#app/components/ui/icon'
-import Button from '#app/components/ui/button.js'
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import { useLoaderData } from '@remix-run/react'
+import { type ColumnDef } from '@tanstack/react-table'
+import { toast } from 'sonner'
+import FilterItem from './filter'
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const userId = await requireUserId(request)
@@ -52,6 +52,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 			title: true,
 			content: true,
 			createdAt: true,
+			amount: true,
 			owner: {
 				select: {
 					username: true,
@@ -128,17 +129,6 @@ const columnsDef: ColumnDef<LoaderDataUser>[] = [
 		},
 	},
 	{
-		accessorKey: 'title',
-		header: 'Title',
-		cell: (cell) => {
-			return (
-				<Text className="overflow-hidden truncate">
-					{cell.getValue() as string}
-				</Text>
-			)
-		},
-	},
-	{
 		accessorKey: 'owner',
 		header: 'Owner',
 		cell: (cell) => {
@@ -155,10 +145,36 @@ const columnsDef: ColumnDef<LoaderDataUser>[] = [
 	{
 		accessorKey: 'receiver',
 		header: 'Receiver',
+		cell: (cell) => {
+			const user = cell.getValue() as LoaderDataUser['owner']
+			return (
+				<UserAvatar
+					imageId={user.image?.id}
+					title={user.name ?? user.username}
+					description={user.username}
+				/>
+			)
+		},
 	},
 	{
 		accessorKey: 'amount',
 		header: 'Amount',
+		cell: (cell) => {
+			return (
+				<Text className="overflow-hidden truncate">
+					{cell.getValue() as string} 💖
+				</Text>
+			)
+		},
+	},
+	{
+		accessorKey: 'createdAt',
+		header: 'Transfer At',
+		cell: (cell) => {
+			const date = cell.getValue() as string
+			const localeDate = new Date(date).toLocaleDateString()
+			return <Caption className="">{localeDate}</Caption>
+		},
 	},
 ]
 function HistoryPage() {
@@ -170,9 +186,33 @@ function HistoryPage() {
 				description={`Showing ${metadata.totals} transactions`}
 				columns={columnsDef}
 				data={user as unknown as any}
+				actions={[
+					[
+						{
+							label: 'Copy ID',
+							icon: <Icon name="envelope-closed" />,
+							mode: 'single',
+							onClick: (item) => {
+								// get item
+								const id = Object.keys(item)[0] as string
+								// copy to clipboard
+								navigator.clipboard.writeText(id)
+								toast.success('ID copied to clipboard')
+							},
+						},
+						{
+							label: 'Delete',
+							icon: <Icon name="trash" />,
+							mode: 'multiple',
+							intent: 'danger',
+						},
+					],
+				]}
+				getRowId={(row) => row.id}
+				filter={<FilterItem />}
 			/>
 			<hr />
-			{JSON.stringify(metadata)}
+			{/* {JSON.stringify(metadata)} */}
 		</div>
 	)
 }
