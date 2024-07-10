@@ -30,6 +30,7 @@ import { prisma } from '#app/utils/db.server.ts'
 import { makeTimings } from '#app/utils/timing.server.ts'
 import { createToastHeaders } from '#app/utils/toast.server.ts'
 import { type BreadcrumbHandle } from './profile.tsx'
+import Button from '#app/components/ui/button.js'
 
 export const handle: BreadcrumbHandle & SEOHandle = {
 	breadcrumb: <Icon name="link-2">Connections</Icon>,
@@ -145,7 +146,7 @@ export default function Connections() {
 			) : (
 				<p>You don't have any connections yet.</p>
 			)}
-			<div className="mt-5 flex flex-col gap-5 border-b-2 border-t-2 border-border py-3">
+			<div className="border-border mt-5 flex flex-col gap-5 border-b-2 border-t-2 py-3">
 				{providerNames.map((providerName) => (
 					<ProviderConnectionForm
 						key={providerName}
@@ -192,7 +193,7 @@ function Connection({
 								<StatusButton
 									name="intent"
 									value="delete-connection"
-									variant="destructive"
+									intent="danger"
 									size="sm"
 									status={
 										deleteFetcher.state !== 'idle'
@@ -200,7 +201,9 @@ function Connection({
 											: deleteFetcher.data?.status ?? 'idle'
 									}
 								>
-									<Icon name="cross-1" />
+									<Button.Icon type="only">
+										<Icon name="cross-1" />
+									</Button.Icon>
 								</StatusButton>
 							</TooltipTrigger>
 							<TooltipContent>Disconnect this account</TooltipContent>

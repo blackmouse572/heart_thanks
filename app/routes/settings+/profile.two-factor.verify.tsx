@@ -26,6 +26,9 @@ import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { getTOTPAuthUri } from '#app/utils/totp.server.ts'
 import { type BreadcrumbHandle } from './profile.tsx'
 import { twoFAVerificationType } from './profile.two-factor.tsx'
+import Card from '#app/components/ui/card.js'
+import { Caption } from '#app/components/ui/caption.js'
+import { Text } from '#app/components/ui/text.js'
 
 export const handle: BreadcrumbHandle & SEOHandle = {
 	breadcrumb: <Icon name="check">Verify</Icon>,
@@ -150,14 +153,14 @@ export default function TwoFactorRoute() {
 	const lastSubmissionIntent = fields.intent.value
 
 	return (
-		<div>
+		<Card>
 			<div className="flex flex-col items-center gap-4">
 				<img alt="qr code" src={data.qrCode} className="h-56 w-56" />
-				<p>Scan this QR code with your authenticator app.</p>
-				<p className="text-sm">
+				<Text>Scan this QR code with your authenticator app.</Text>
+				<Caption className="text-sm">
 					If you cannot scan the QR code, you can manually add this account to
 					your authenticator app using this code:
-				</p>
+				</Caption>
 				<div className="p-3">
 					<pre
 						className="whitespace-pre-wrap break-all text-sm"
@@ -166,13 +169,13 @@ export default function TwoFactorRoute() {
 						{data.otpUri}
 					</pre>
 				</div>
-				<p className="text-sm">
+				<Caption className="text-sm">
 					Once you've added the account, enter the code from your authenticator
 					app below. Once you enable 2FA, you will need to enter a code from
 					your authenticator app every time you log in or perform important
 					actions. Do not lose access to your authenticator app, or you will
 					lose access to your account.
-				</p>
+				</Caption>
 				<div className="flex w-full max-w-xs flex-col justify-center gap-4">
 					<Form method="POST" {...getFormProps(form)} className="flex-1">
 						<div className="flex items-center justify-center">
@@ -212,7 +215,7 @@ export default function TwoFactorRoute() {
 							</StatusButton>
 							<StatusButton
 								className="w-full"
-								variant="secondary"
+								intent="secondary"
 								status={
 									pendingIntent === 'cancel'
 										? 'pending'
@@ -231,6 +234,6 @@ export default function TwoFactorRoute() {
 					</Form>
 				</div>
 			</div>
-		</div>
+		</Card>
 	)
 }

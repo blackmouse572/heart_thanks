@@ -13,6 +13,10 @@ import { prisma } from '#app/utils/db.server.ts'
 import { generateTOTP } from '#app/utils/totp.server.ts'
 import { twoFAVerificationType } from './profile.two-factor.tsx'
 import { twoFAVerifyVerificationType } from './profile.two-factor.verify.tsx'
+import Card from '#app/components/ui/card.js'
+import { Text } from '#app/components/ui/text.js'
+import { Title } from '#app/components/ui/title.js'
+import { Caption } from '#app/components/ui/caption.js'
 
 export const handle: SEOHandle = {
 	getSitemapEntries: () => null,
@@ -50,26 +54,25 @@ export default function TwoFactorRoute() {
 	const enable2FAFetcher = useFetcher<typeof action>()
 
 	return (
-		<div className="flex flex-col gap-4">
+		<Card className="flex flex-col gap-4">
 			{data.is2FAEnabled ? (
 				<>
 					<p className="text-lg">
-						<Icon name="check">
-							You have enabled two-factor authentication.
-						</Icon>
+						<Icon name="check" />
+						<Text> You have enabled two-factor authentication.</Text>
 					</p>
 					<Link to="disable">
-						<Icon name="lock-open-1">Disable 2FA</Icon>
+						<Icon name="lock-open-1" />
+						<Text>Disable 2FA</Text>
 					</Link>
 				</>
 			) : (
 				<>
-					<p>
-						<Icon name="lock-open-1">
-							You have not enabled two-factor authentication yet.
-						</Icon>
-					</p>
-					<p className="text-sm">
+					<div className="flex items-center gap-2">
+						<Icon name="lock-open-1" size="lg" />
+						<Title> You have not enabled two-factor authentication yet.</Title>
+					</div>
+					<Caption className="text-sm">
 						Two factor authentication adds an extra layer of security to your
 						account. You will need to enter a code from an authenticator app
 						like{' '}
@@ -77,7 +80,7 @@ export default function TwoFactorRoute() {
 							1Password
 						</a>{' '}
 						to log in.
-					</p>
+					</Caption>
 					<enable2FAFetcher.Form method="POST">
 						<StatusButton
 							type="submit"
@@ -91,6 +94,6 @@ export default function TwoFactorRoute() {
 					</enable2FAFetcher.Form>
 				</>
 			)}
-		</div>
+		</Card>
 	)
 }

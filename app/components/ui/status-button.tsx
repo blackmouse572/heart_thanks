@@ -16,6 +16,8 @@ export const StatusButton = React.forwardRef<
 		status: 'pending' | 'success' | 'error' | 'idle'
 		type?: 'button' | 'submit' | 'reset'
 		message?: string | null
+		name?: string
+		value?: string | number | readonly string[]
 		spinDelay?: Parameters<typeof useSpinDelay>[1]
 	}
 >(({ message, status, className, children, spinDelay, ...props }, ref) => {
@@ -44,7 +46,7 @@ export const StatusButton = React.forwardRef<
 		error: (
 			<div
 				role="status"
-				className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-destructive"
+				className="bg-destructive inline-flex h-6 w-6 items-center justify-center rounded-full"
 			>
 				<Icon
 					name="cross-1"

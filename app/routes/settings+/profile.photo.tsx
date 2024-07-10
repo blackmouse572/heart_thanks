@@ -19,7 +19,6 @@ import {
 import { useState } from 'react'
 import { z } from 'zod'
 import { ErrorList } from '#app/components/forms.tsx'
-import { Button } from '#app/components/ui/button.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
 import { requireUserId } from '#app/utils/auth.server.ts'
@@ -30,6 +29,8 @@ import {
 	useIsPending,
 } from '#app/utils/misc.tsx'
 import { type BreadcrumbHandle } from './profile.tsx'
+import Button from '#app/components/ui/button.js'
+import Avatar from '#app/components/ui/avatar.js'
 
 export const handle: BreadcrumbHandle & SEOHandle = {
 	breadcrumb: <Icon name="avatar">Photo</Icon>,
@@ -153,13 +154,17 @@ export default function PhotoRoute() {
 				onReset={() => setNewImageSrc(null)}
 				{...getFormProps(form)}
 			>
-				<img
-					src={
-						newImageSrc ?? (data.user ? getUserImgSrc(data.user.image?.id) : '')
-					}
-					className="h-52 w-52 rounded-full object-cover"
-					alt={data.user?.name ?? data.user?.username}
-				/>
+				<label htmlFor={fields.photoFile.id} className="hover">
+					<Avatar.Root size="3xl" className="outline outline-[--ui-soft-color]">
+						<Avatar.Image
+							src={newImageSrc ?? getUserImgSrc(data.user?.image?.id)}
+							alt={data.user?.name ?? data.user?.username}
+						/>
+						<Avatar.Fallback>
+							{data.user?.name ?? data.user?.username}
+						</Avatar.Fallback>
+					</Avatar.Root>
+				</label>
 				<ErrorList errors={fields.photoFile.errors} id={fields.photoFile.id} />
 				<div className="flex gap-4">
 					{/*
@@ -185,14 +190,14 @@ export default function PhotoRoute() {
 							}
 						}}
 					/>
-					<Button
-						asChild
-						className="cursor-pointer peer-valid:hidden peer-focus-within:ring-2 peer-focus-visible:ring-2"
-					>
-						<label htmlFor={fields.photoFile.id}>
-							<Icon name="pencil-1">Change</Icon>
+					<Button.Root className="cursor-pointer peer-valid:hidden peer-focus-within:ring-2 peer-focus-visible:ring-2">
+						<label htmlFor={fields.photoFile.id} className="space-x-2">
+							<Button.Icon type="leading">
+								<Icon name="pencil-1" />
+							</Button.Icon>
+							<Button.Label>Change</Button.Label>
 						</label>
-					</Button>
+					</Button.Root>
 					<StatusButton
 						name="intent"
 						value="submit"
@@ -208,17 +213,17 @@ export default function PhotoRoute() {
 					>
 						Save Photo
 					</StatusButton>
-					<Button
-						variant="destructive"
+					<Button.Root
+						intent="danger"
 						className="peer-invalid:hidden"
 						{...form.reset.getButtonProps()}
 					>
 						<Icon name="trash">Reset</Icon>
-					</Button>
+					</Button.Root>
 					{data.user.image?.id ? (
 						<StatusButton
 							className="peer-valid:hidden"
-							variant="destructive"
+							intent="danger"
 							{...doubleCheckDeleteImage.getButtonProps({
 								type: 'submit',
 								name: 'intent',

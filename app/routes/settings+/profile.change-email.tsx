@@ -24,6 +24,9 @@ import { EmailSchema } from '#app/utils/user-validation.ts'
 import { verifySessionStorage } from '#app/utils/verification.server.ts'
 import { EmailChangeEmail } from './profile.change-email.server.tsx'
 import { type BreadcrumbHandle } from './profile.tsx'
+import Card from '#app/components/ui/card.js'
+import { Title } from '#app/components/ui/title.js'
+import { Caption } from '#app/components/ui/caption.js'
 
 export const handle: BreadcrumbHandle & SEOHandle = {
 	breadcrumb: <Icon name="envelope-closed">Change Email</Icon>,
@@ -119,14 +122,17 @@ export default function ChangeEmailIndex() {
 
 	const isPending = useIsPending()
 	return (
-		<div>
-			<h1 className="text-h1">Change Email</h1>
-			<p>You will receive an email at the new email address to confirm.</p>
-			<p>
-				An email notice will also be sent to your old address {data.user.email}.
-			</p>
-			<div className="mx-auto mt-5 max-w-sm">
-				<Form method="POST" {...getFormProps(form)}>
+		<Card>
+			<Title className="text-h1">Change Email</Title>
+			<Caption>
+				You will receive an email at the new email address to confirm.
+			</Caption>
+			<Caption>
+				An email notice will also be sent to your old address{' '}
+				<b>{data.user.email}</b>
+			</Caption>
+			<div className="mx-auto mt-5">
+				<Form method="POST" {...getFormProps(form)} className="space-y-4">
 					<Field
 						labelProps={{ children: 'New Email' }}
 						inputProps={{
@@ -145,6 +151,6 @@ export default function ChangeEmailIndex() {
 					</div>
 				</Form>
 			</div>
-		</div>
+		</Card>
 	)
 }

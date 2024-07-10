@@ -7,7 +7,7 @@ import {
 	type LoaderFunctionArgs,
 	type ActionFunctionArgs,
 } from '@remix-run/node'
-import { Link, useFetcher, useLoaderData } from '@remix-run/react'
+import { useFetcher, useLoaderData } from '@remix-run/react'
 import { z } from 'zod'
 import { ErrorList, Field } from '#app/components/forms.tsx'
 import Button from '#app/components/ui/button'
@@ -20,6 +20,14 @@ import { authSessionStorage } from '#app/utils/session.server.ts'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { NameSchema, UsernameSchema } from '#app/utils/user-validation.ts'
 import { twoFAVerificationType } from './profile.two-factor.tsx'
+import ScrollArea from '#app/components/ui/scroll-area.js'
+import * as LinkList from '#app/components/link-list.js'
+import * as Link from '#app/components/ui/link.js'
+import Card from '#app/components/ui/card.js'
+import { TabSections } from '#app/components/tab-sections.js'
+import UserAvatar from '#app/components/user-avatar.js'
+import Banner from '#app/components/ui/banner.js'
+import { Text } from '#app/components/ui/text.js'
 
 export const handle: SEOHandle = {
 	getSitemapEntries: () => null,
@@ -104,73 +112,128 @@ export default function EditUserProfile() {
 	const data = useLoaderData<typeof loader>()
 
 	return (
-		<div className="flex flex-col gap-12">
-			<div className="flex justify-center">
-				<div className="relative h-52 w-52">
-					<img
-						src={getUserImgSrc(data.user.image?.id)}
-						alt={data.user.username}
-						className="h-full w-full rounded-full object-cover"
-					/>
-					<Button.Root
-						variant="outlined"
-						className="absolute -right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full p-0"
-					>
-						<Link
-							preventScrollReset
-							to="photo"
-							title="Change profile photo"
-							aria-label="Change profile photo"
-						>
-							<Icon name="camera" className="h-4 w-4" />
-						</Link>
-					</Button.Root>
-				</div>
-			</div>
-			<UpdateProfile />
-
-			<div className="col-span-6 my-6 h-1 border-b-[1.5px] border-foreground" />
-			<div className="col-span-full flex flex-col gap-6">
-				<div>
-					<Link to="change-email">
-						<Icon name="envelope-closed">
-							Change email from {data.user.email}
-						</Icon>
-					</Link>
-				</div>
-				<div>
-					<Link to="two-factor">
-						{data.isTwoFactorEnabled ? (
-							<Icon name="lock-closed">2FA is enabled</Icon>
-						) : (
-							<Icon name="lock-open-1">Enable 2FA</Icon>
-						)}
-					</Link>
-				</div>
-				<div>
-					<Link to={data.hasPassword ? 'password' : 'password/create'}>
-						<Icon name="dots-horizontal">
-							{data.hasPassword ? 'Change Password' : 'Create a Password'}
-						</Icon>
-					</Link>
-				</div>
-				<div>
-					<Link to="connections">
-						<Icon name="link-2">Manage connections</Icon>
-					</Link>
-				</div>
-				<div>
-					<Link
-						reloadDocument
-						download="my-epic-notes-data.json"
-						to="/resources/download-user-data"
-					>
-						<Icon name="download">Download your data</Icon>
-					</Link>
-				</div>
-				<SignOutOfSessions />
-				<DeleteData />
-			</div>
+		<div>
+			<Card>
+				<TabSections
+					data={[
+						{
+							trigger: {
+								id: 'Profile',
+								value: 'Profile',
+							},
+							content: {
+								value: 'Profile',
+								render: (
+									<div className="w-full space-y-4">
+										<div className="item-center flex justify-between">
+											<UserAvatar
+												imageId={data.user.image?.id}
+												title={data.user.username}
+											/>
+											<Button.Root
+												// preventScrollReset
+												href="photo"
+												aria-label="Change profile photo"
+												variant="ghost"
+											>
+												<Button.Icon type="only">
+													<Icon name="camera" className="h-4 w-4" />
+												</Button.Icon>
+											</Button.Root>
+										</div>
+										<UpdateProfile />
+									</div>
+								),
+							},
+						},
+						{
+							trigger: {
+								id: 'Setting',
+								value: 'Setting',
+							},
+							content: {
+								value: 'Setting',
+								render: (
+									<div className="w-full">
+										<ScrollArea.Root className="w-full">
+											<ScrollArea.Viewport className="w-full">
+												<div className="col-span-full flex flex-col gap-6">
+													<div>
+														<Link.Root link="change-email">
+															<Link.Icon>
+																<Icon name="envelope-closed">
+																	Change email from {data.user.email}
+																</Icon>
+															</Link.Icon>
+														</Link.Root>
+													</div>
+													<div>
+														<Link.Root link="two-factor">
+															{data.isTwoFactorEnabled ? (
+																<>
+																	<Link.Icon>
+																		<Icon name="lock-closed" />
+																	</Link.Icon>
+																	<Link.Label>2FA is enabled</Link.Label>
+																</>
+															) : (
+																<>
+																	<Link.Icon>
+																		<Icon name="lock-open-1" />
+																	</Link.Icon>
+																	<Link.Label>Enable 2FA</Link.Label>
+																</>
+															)}
+														</Link.Root>
+													</div>
+													<div>
+														<Link.Root
+															link={
+																data.hasPassword
+																	? 'password'
+																	: 'password/create'
+															}
+														>
+															<Link.Icon>
+																<Icon name="dots-horizontal" />
+															</Link.Icon>
+															<Link.Label>
+																{data.hasPassword
+																	? 'Change Password'
+																	: 'Create a Password'}
+															</Link.Label>
+														</Link.Root>
+													</div>
+													<div>
+														<Link.Root link="connections">
+															<Link.Icon>
+																<Icon name="link-2" />
+															</Link.Icon>
+															<Link.Label>Manage connections</Link.Label>
+														</Link.Root>
+													</div>
+													<SignOutOfSessions />
+													<DeleteData />
+												</div>
+											</ScrollArea.Viewport>
+										</ScrollArea.Root>
+									</div>
+								),
+							},
+						},
+						{
+							trigger: {
+								id: 'off',
+								value: 'off',
+							},
+							content: {
+								value: 'off',
+								render: <div className="w-full">Setting</div>,
+							},
+						},
+					]}
+				/>
+			</Card>
 		</div>
 	)
 }
@@ -318,7 +381,14 @@ function SignOutOfSessions() {
 					</StatusButton>
 				</fetcher.Form>
 			) : (
-				<Icon name="avatar">This is your only session</Icon>
+				<Banner.Root>
+					<Banner.Content>
+						<Banner.Icon>
+							<Icon name="avatar" />
+						</Banner.Icon>
+						<Text>You are not signed in on any other devices</Text>
+					</Banner.Content>
+				</Banner.Root>
 			)}
 		</div>
 	)
@@ -339,13 +409,14 @@ function DeleteData() {
 	const fetcher = useFetcher<typeof deleteDataAction>()
 	return (
 		<div>
-			<fetcher.Form method="POST">
+			<fetcher.Form method="POST" className="w-full">
 				<StatusButton
 					{...dc.getButtonProps({
 						type: 'submit',
 						name: 'intent',
 						value: deleteDataActionIntent,
 					})}
+					className="ml-auto"
 					intent={dc.doubleCheck ? 'danger' : 'primary'}
 					status={fetcher.state !== 'idle' ? 'pending' : 'idle'}
 				>

@@ -10,7 +10,6 @@ import {
 import { Form, Link, useActionData } from '@remix-run/react'
 import { z } from 'zod'
 import { ErrorList, Field } from '#app/components/forms.tsx'
-import { Button } from '#app/components/ui/button.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
 import {
@@ -23,6 +22,11 @@ import { useIsPending } from '#app/utils/misc.tsx'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { PasswordSchema } from '#app/utils/user-validation.ts'
 import { type BreadcrumbHandle } from './profile.tsx'
+import Button from '#app/components/ui/button.js'
+import Card from '#app/components/ui/card.js'
+import { Title } from '#app/components/ui/title.js'
+import { Caption } from '#app/components/ui/caption.js'
+import SeparatorRoot from '#app/components/ui/seperator.js'
 
 export const handle: BreadcrumbHandle & SEOHandle = {
 	breadcrumb: <Icon name="dots-horizontal">Password</Icon>,
@@ -133,45 +137,54 @@ export default function ChangePasswordRoute() {
 	})
 
 	return (
-		<Form method="POST" {...getFormProps(form)} className="mx-auto max-w-md">
-			<Field
-				labelProps={{ children: 'Current Password' }}
-				inputProps={{
-					...getInputProps(fields.currentPassword, { type: 'password' }),
-					autoComplete: 'current-password',
-				}}
-				errors={fields.currentPassword.errors}
-			/>
-			<Field
-				labelProps={{ children: 'New Password' }}
-				inputProps={{
-					...getInputProps(fields.newPassword, { type: 'password' }),
-					autoComplete: 'new-password',
-				}}
-				errors={fields.newPassword.errors}
-			/>
-			<Field
-				labelProps={{ children: 'Confirm New Password' }}
-				inputProps={{
-					...getInputProps(fields.confirmNewPassword, {
-						type: 'password',
-					}),
-					autoComplete: 'new-password',
-				}}
-				errors={fields.confirmNewPassword.errors}
-			/>
-			<ErrorList id={form.errorId} errors={form.errors} />
-			<div className="grid w-full grid-cols-2 gap-6">
-				<Button variant="secondary" asChild>
-					<Link to="..">Cancel</Link>
-				</Button>
-				<StatusButton
-					type="submit"
-					status={isPending ? 'pending' : form.status ?? 'idle'}
-				>
-					Change Password
-				</StatusButton>
+		<Card variant="outlined" className="space-y-8">
+			<div>
+				<Title>Change password</Title>
+				<Caption>
+					Change the password you use to log in to your account.
+				</Caption>
 			</div>
-		</Form>
+			<SeparatorRoot />
+			<Form method="POST" {...getFormProps(form)} className="space-y-4">
+				<Field
+					labelProps={{ children: 'Current Password' }}
+					inputProps={{
+						...getInputProps(fields.currentPassword, { type: 'password' }),
+						autoComplete: 'current-password',
+					}}
+					errors={fields.currentPassword.errors}
+				/>
+				<Field
+					labelProps={{ children: 'New Password' }}
+					inputProps={{
+						...getInputProps(fields.newPassword, { type: 'password' }),
+						autoComplete: 'new-password',
+					}}
+					errors={fields.newPassword.errors}
+				/>
+				<Field
+					labelProps={{ children: 'Confirm New Password' }}
+					inputProps={{
+						...getInputProps(fields.confirmNewPassword, {
+							type: 'password',
+						}),
+						autoComplete: 'new-password',
+					}}
+					errors={fields.confirmNewPassword.errors}
+				/>
+				<ErrorList id={form.errorId} errors={form.errors} />
+				<div className="grid w-full grid-cols-2 gap-6">
+					<StatusButton
+						type="submit"
+						status={isPending ? 'pending' : form.status ?? 'idle'}
+					>
+						Change Password
+					</StatusButton>
+					<Button.Root href=".." variant="outlined">
+						<Button.Label>Cancel</Button.Label>
+					</Button.Root>
+				</div>
+			</Form>
+		</Card>
 	)
 }
