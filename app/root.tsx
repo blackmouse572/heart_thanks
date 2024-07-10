@@ -48,6 +48,7 @@ import { makeTimings, time } from './utils/timing.server.ts'
 import { getToast } from './utils/toast.server.ts'
 import { useUser } from './utils/user.ts'
 import sonnerStyles from '#app/components/ui/sonner.css?url'
+import { Caption } from './components/ui/caption.tsx'
 
 export const links: LinksFunction = () => {
 	return [
@@ -218,7 +219,8 @@ function App() {
 					<Outlet />
 				</div>
 
-				<div className="container flex justify-between pb-5">
+				<div className="container flex justify-between pb-5 pt-3">
+					<Caption>A property of DMSO</Caption>
 					<Logo />
 					<ThemeSwitch userPreference={data.requestInfo.userPrefs.theme} />
 				</div>
@@ -233,10 +235,10 @@ function Logo() {
 	return (
 		<Link to="/" className="group grid leading-snug">
 			<span className="font-light transition group-hover:-translate-x-1">
-				epic
+				Heart
 			</span>
 			<span className="font-bold transition group-hover:translate-x-1">
-				notes
+				Thanks
 			</span>
 		</Link>
 	)

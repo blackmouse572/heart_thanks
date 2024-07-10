@@ -61,7 +61,7 @@ export default function UsersRoute() {
 
 	return (
 		<div className="container mb-48 mt-36 flex flex-col items-center justify-center gap-6">
-			<h1 className="text-h1">Epic Notes Users</h1>
+			<h1 className="text-h1">Hearts Thanks Users</h1>
 			<div className="w-full max-w-[700px]">
 				<SearchBar status={data.status} autoFocus autoSubmit />
 			</div>
@@ -78,7 +78,7 @@ export default function UsersRoute() {
 								<li key={user.id}>
 									<Link
 										to={user.username}
-										className="flex h-36 w-44 flex-col items-center justify-center rounded-lg bg-muted px-5 py-3"
+										className="bg-muted flex h-36 w-44 flex-col items-center justify-center rounded-lg px-5 py-3"
 									>
 										<img
 											alt={user.name ?? user.username}
@@ -86,11 +86,11 @@ export default function UsersRoute() {
 											className="h-16 w-16 rounded-full"
 										/>
 										{user.name ? (
-											<span className="w-full overflow-hidden text-ellipsis whitespace-nowrap text-center text-body-md">
+											<span className="text-body-md w-full overflow-hidden text-ellipsis whitespace-nowrap text-center">
 												{user.name}
 											</span>
 										) : null}
-										<span className="w-full overflow-hidden text-ellipsis text-center text-body-sm text-muted-foreground">
+										<span className="text-body-sm text-muted-foreground w-full overflow-hidden text-ellipsis text-center">
 											{user.username}
 										</span>
 									</Link>
