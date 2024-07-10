@@ -5,10 +5,12 @@ import {
 	createPassword,
 	createUser,
 	getNoteImages,
+	getRamdomReceiver,
 	getUserImages,
 	img,
 } from '#tests/db-utils.ts'
 import { insertGitHubUser } from '#tests/mocks/github.ts'
+import { User } from '@prisma/client'
 import { promiseHash } from 'remix-utils/promise'
 
 async function seed() {
@@ -64,10 +66,10 @@ async function seed() {
 	console.time(`👤 Created ${totalUsers} users...`)
 	const noteImages = await getNoteImages()
 	const userImages = await getUserImages()
-
+	const users: { id: string }[] = []
 	for (let index = 0; index < totalUsers; index++) {
 		const userData = createUser()
-		await prisma.user
+		const createdUser = await prisma.user
 			.create({
 				select: { id: true },
 				data: {
@@ -82,10 +84,14 @@ async function seed() {
 				console.error('Error creating a user:', e)
 				return null
 			})
+
+		if (createdUser) {
+			users.push(createdUser)
+		}
 	}
 	console.timeEnd(`👤 Created ${totalUsers} users...`)
 
-	console.time(`🐨 Created admin user "jaden"`)
+	console.time(`🐨 Created admin user "jaden.nguyen"`)
 
 	const kodyImages = await promiseHash({
 		kodyUser: img({ filepath: './tests/fixtures/images/user/kody.png' }),
@@ -137,6 +143,26 @@ async function seed() {
 		},
 	})
 	console.timeEnd(`🐨 Created admin user "jaden.nguyen"`)
+
+	console.time(`📝 Created transactions...`)
+	const totalTransactionsPerUser = 5
+	users.forEach(async (user) => {
+		for (let index = 0; index < totalTransactionsPerUser; index++) {
+			const randomReceiver = await getRamdomReceiver(users, user)
+			await prisma.transactions.create({
+				data: {
+					amount: 10,
+					content: 'Seeded transaction content',
+					title: 'Seeded transaction title',
+					createdAt: new Date(),
+					updatedAt: new Date(),
+					owner: { connect: { id: user.id } },
+					receiver: { connect: { id: randomReceiver.id } },
+				},
+			})
+		}
+	})
+	console.timeEnd(`📝 Created transactions...`)
 
 	console.timeEnd(`🌱 Database has been seeded`)
 }

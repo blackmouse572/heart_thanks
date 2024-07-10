@@ -1,5 +1,15 @@
 import {
-	ContextMenuItem,
+	type ColumnDef,
+	flexRender,
+	getCoreRowModel,
+	type RowSelectionState,
+	type SortingState,
+	type TableOptions,
+	useReactTable,
+} from '@tanstack/react-table'
+import React, { useEffect, useMemo } from 'react'
+import {
+	type ContextMenuItem,
 	RenderContenxtMenu,
 } from '#app/components/data-table/context-menu.js'
 import { Caption } from '#app/components/ui/caption.js'
@@ -8,20 +18,17 @@ import {
 	Table,
 	TableBody,
 	TableCell,
+	TableFooter,
 	TableHead,
 	TableHeader,
 	TableRow,
 } from '#app/components/ui/table/index.js'
 import { Title } from '#app/components/ui/title.js'
-import {
-	type ColumnDef,
-	flexRender,
-	getCoreRowModel,
-	RowSelectionState,
-	TableOptions,
-	useReactTable,
-} from '@tanstack/react-table'
-import React from 'react'
+import { Icon } from '../ui/icon'
+import { cn } from '#app/utils/misc.js'
+import { useSearchParams, useSubmit } from '@remix-run/react'
+import TablePagination from './pagination'
+import { Metadata } from '#app/utils/request.server.js'
 
 interface DataTableProps<TData, TValue> extends Partial<TableOptions<TData>> {
 	columns: ColumnDef<TData, TValue>[]
@@ -30,6 +37,7 @@ interface DataTableProps<TData, TValue> extends Partial<TableOptions<TData>> {
 	description?: React.ReactNode
 	filter?: React.ReactNode
 	actions?: ContextMenuItem<TData>[][]
+	metadata: Metadata
 }
 
 export function DataTable<TData, TValue>({
@@ -39,26 +47,61 @@ export function DataTable<TData, TValue>({
 	title,
 	actions,
 	description,
+	metadata,
 	...options
 }: Readonly<DataTableProps<TData, TValue>>) {
 	const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
+	const [sorting, setSorting] = React.useState<SortingState>([])
+	const [searchParams] = useSearchParams()
+	const submit = useSubmit()
+	const totalSelectCount = useMemo(
+		() => Object.values(rowSelection).filter(Boolean).length,
+		[rowSelection],
+	)
 	const table = useReactTable({
 		data,
 		columns,
 		getCoreRowModel: getCoreRowModel(),
 		onRowSelectionChange: setRowSelection,
+		onSortingChange: setSorting,
 		state: {
 			rowSelection,
+			sorting,
 		},
+		manualSorting: true,
 		...options,
 	})
+	useEffect(() => {
+		console.log(sorting)
+		if (!sorting.length || sorting.length <= 0) return
+		const formData = new FormData()
+		formData.append('sort', JSON.stringify(sorting))
+
+		// presist search params
+		searchParams.forEach((value, key) => {
+			if (key === 'sort') return
+			formData.append(key, value)
+		})
+
+		submit(formData, { method: 'GET' })
+	}, [sorting])
+	const renderDescription = useMemo(() => {
+		if (totalSelectCount > 0) {
+			return (
+				<Caption>
+					Selected <b>{totalSelectCount}</b> rows
+				</Caption>
+			)
+		}
+		return <Caption>{description}</Caption>
+	}, [description, totalSelectCount])
 
 	return (
 		<Card className="cursor-default rounded-[--btn-radius]">
 			<div className="mb-4 flex items-end justify-between">
 				<div>
 					<Title>{title}</Title>
-					{description && <Caption>{description}</Caption>}
+					{renderDescription}
 				</div>
 				<div>{filter}</div>
 			</div>
@@ -67,14 +110,32 @@ export function DataTable<TData, TValue>({
 					{table.getHeaderGroups().map((headerGroup) => (
 						<TableRow key={headerGroup.id}>
 							{headerGroup.headers.map((header) => {
+								const sortable = header.column.columnDef.enableSorting !== false
 								return (
-									<TableHead key={header.id}>
+									<TableHead
+										key={header.id}
+										onClick={header.column.getToggleSortingHandler()}
+										className={cn(
+											'relative [&_svg]:inset-0 [&_svg]:right-0 [&_svg]:m-auto',
+											{
+												'cursor-pointer': sortable,
+												'': sortable,
+											},
+										)}
+										data-sortable={sortable}
+									>
 										{header.isPlaceholder
 											? null
 											: flexRender(
 													header.column.columnDef.header,
 													header.getContext(),
 												)}
+										{{
+											asc: (
+												<Icon className={'r absolute'} name="chevron-down" />
+											),
+											desc: <Icon className={'absolute'} name="chevron-up" />,
+										}[header.column.getIsSorted() as string] || null}
 									</TableHead>
 								)
 							})}
@@ -128,6 +189,9 @@ export function DataTable<TData, TValue>({
 					</TableBody>
 				</RenderContenxtMenu>
 			</Table>
+			<div className="mt-4">
+				<TablePagination metadata={metadata} />
+			</div>
 		</Card>
 	)
 }

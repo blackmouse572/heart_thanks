@@ -1,22 +1,29 @@
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import { useLoaderData } from '@remix-run/react'
+import { type ColumnDef } from '@tanstack/react-table'
+import { toast } from 'sonner'
 import Checkbox from '#app/components/checkbox'
 import DataTable from '#app/components/data-table/data-table.js'
 import { Caption } from '#app/components/ui/caption.js'
 import { Icon } from '#app/components/ui/icon.js'
 import { Text } from '#app/components/ui/text'
 import UserAvatar from '#app/components/user-avatar.js'
+import {
+	getMaxTransactionAmount,
+	getMinTransactionAmount,
+	getUserTransaction,
+	getUserTransactionCount,
+} from '#app/routes/history+/history.server.ts'
 import { requireUserId } from '#app/utils/auth.server.js'
-import { prisma } from '#app/utils/db.server.js'
-import { getMetadata } from '#app/utils/request.server.js'
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
-import { useLoaderData } from '@remix-run/react'
-import { type ColumnDef } from '@tanstack/react-table'
-import { toast } from 'sonner'
+import { getMetadata, parseSort } from '#app/utils/request.server.js'
 import FilterItem from './filter'
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const userId = await requireUserId(request)
 	const metadata = getMetadata(request)
-	const { search, skip, take } = metadata
+	const { search, min, max, sort } = metadata
+	const sortObj = parseSort(sort)
+	console.log(sortObj)
 	const where = {
 		AND: [
 			{
@@ -43,48 +50,29 @@ export async function loader({ request }: LoaderFunctionArgs) {
 					},
 				],
 			},
+			min !== undefined && max !== undefined
+				? {
+						amount: {
+							gte: parseInt(min) || 0,
+							lte: parseInt(max) || 100000,
+						},
+					}
+				: {},
 		],
 	}
-	const user = await prisma.transactions.findMany({
-		where,
-		select: {
-			id: true,
-			title: true,
-			content: true,
-			createdAt: true,
-			amount: true,
-			owner: {
-				select: {
-					username: true,
-					name: true,
-					image: {
-						select: {
-							id: true,
-						},
-					},
-				},
-			},
-			receiver: {
-				select: {
-					username: true,
-					name: true,
-					image: {
-						select: {
-							id: true,
-						},
-					},
-				},
-			},
-		},
-		skip,
-		take,
-	})
-	const totals = await prisma.transactions.aggregate({
-		where,
-		_count: true,
-	})
-
-	metadata.totals = totals._count
+	const user = await getUserTransaction(metadata, where, sortObj)
+	const totals = await getUserTransactionCount(where, sortObj)
+	const [minV, maxV] = await Promise.all([
+		getMinTransactionAmount(userId),
+		getMaxTransactionAmount(userId),
+	])
+	metadata.totals = totals
+	metadata.min = minV?.amount
+	metadata.max = maxV?.amount
+	metadata.filter = {
+		min,
+		max,
+	}
 
 	return json({
 		user,
@@ -97,13 +85,14 @@ type LoaderDataUser = Awaited<
 const columnsDef: ColumnDef<LoaderDataUser>[] = [
 	{
 		id: 'select',
+
 		header: ({ table }) => (
 			<Checkbox
 				checked={
 					table.getIsAllPageRowsSelected() ||
 					(table.getIsSomePageRowsSelected() && 'indeterminate')
 				}
-				indeterminate={table.getIsSomePageRowsSelected()}
+				indeterminate={table.getIsSomePageRowsSelected() || false}
 				onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
 				aria-label="Select all"
 			/>
@@ -120,6 +109,7 @@ const columnsDef: ColumnDef<LoaderDataUser>[] = [
 	},
 	{
 		accessorKey: 'id',
+		enableSorting: false,
 		header: 'ID',
 		cell: (cell) => {
 			const id = cell.getValue() as string
@@ -131,6 +121,7 @@ const columnsDef: ColumnDef<LoaderDataUser>[] = [
 	{
 		accessorKey: 'owner',
 		header: 'Owner',
+		enableSorting: false,
 		cell: (cell) => {
 			const user = cell.getValue() as LoaderDataUser['owner']
 			return (
@@ -144,6 +135,7 @@ const columnsDef: ColumnDef<LoaderDataUser>[] = [
 	},
 	{
 		accessorKey: 'receiver',
+		enableSorting: false,
 		header: 'Receiver',
 		cell: (cell) => {
 			const user = cell.getValue() as LoaderDataUser['owner']
@@ -159,6 +151,7 @@ const columnsDef: ColumnDef<LoaderDataUser>[] = [
 	{
 		accessorKey: 'amount',
 		header: 'Amount',
+		enableSorting: true,
 		cell: (cell) => {
 			return (
 				<Text className="overflow-hidden truncate">
@@ -170,6 +163,7 @@ const columnsDef: ColumnDef<LoaderDataUser>[] = [
 	{
 		accessorKey: 'createdAt',
 		header: 'Transfer At',
+		enableSorting: false,
 		cell: (cell) => {
 			const date = cell.getValue() as string
 			const localeDate = new Date(date).toLocaleDateString()
@@ -182,8 +176,9 @@ function HistoryPage() {
 	return (
 		<div className="container mt-5">
 			<DataTable
+				metadata={metadata as any}
 				title={`History Transaction`}
-				description={`Showing ${metadata.totals} transactions`}
+				description={`Showing ${metadata.take}/${metadata.totals} transactions`}
 				columns={columnsDef}
 				data={user as unknown as any}
 				actions={[
@@ -209,10 +204,9 @@ function HistoryPage() {
 					],
 				]}
 				getRowId={(row) => row.id}
-				filter={<FilterItem />}
+				filter={<FilterItem metadata={metadata as any} />}
 			/>
 			<hr />
-			{/* {JSON.stringify(metadata)} */}
 		</div>
 	)
 }

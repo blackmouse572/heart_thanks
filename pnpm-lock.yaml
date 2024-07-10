@@ -325,6 +325,9 @@ devDependencies:
   eslint:
     specifier: ^9.4.0
     version: 9.6.0
+  eslint-plugin-react-hooks:
+    specifier: ^4.6.2
+    version: 4.6.2(eslint@9.6.0)
   fs-extra:
     specifier: ^11.2.0
     version: 11.2.0

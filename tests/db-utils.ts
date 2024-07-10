@@ -100,7 +100,19 @@ export async function getUserImages() {
 
 	return userImages
 }
+export async function getRamdomReceiver(
+	users: { id: string }[],
+	self: { id: string },
+) {
+	const receiver = users.filter((user) => user.id !== self.id)
+	let randomReceiver: { id: string } | undefined
+	while (!randomReceiver) {
+		const randomNumber = Math.floor(Math.random() * receiver.length)
+		randomReceiver = receiver[randomNumber]
+	}
 
+	return randomReceiver
+}
 export async function img({
 	altText,
 	filepath,

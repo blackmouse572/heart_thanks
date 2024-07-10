@@ -6,15 +6,45 @@ import Popover from '#app/components/ui/popover'
 import Slider from '#app/components/ui/slider'
 import { Text } from '#app/components/ui/text.js'
 import { useDebounce, useIsPending } from '#app/utils/misc.js'
+import { Metadata } from '#app/utils/request.server.js'
 import { Form, useLocation, useSearchParams, useSubmit } from '@remix-run/react'
 import React, { useId } from 'react'
-function FilterItem() {
+type FilterItemProps = {
+	metadata: Metadata & {
+		min: number
+		max: number
+	}
+}
+function FilterItem({ metadata }: FilterItemProps) {
+	const { filter } = metadata
 	const id = useId()
 	const [searchParams] = useSearchParams()
 	const location = useLocation()
 	const submit = useSubmit()
 	const isSubmitting = useIsPending()
-	const [range, setRange] = React.useState([100, 0])
+	const [range, setRange] = React.useState([
+		metadata.filter.min,
+		metadata.filter.max,
+	])
+
+	const reset = () => {
+		const data = new FormData()
+		data.append('search', '')
+		data.append('min', metadata.min.toString())
+		data.append('max', metadata.max.toString())
+		submit(data)
+	}
+
+	const setRangeChange = (value: string, index: number) => {
+		if (value === '') return
+		const val = parseInt(value)
+
+		if (index === 0) {
+			setRange([val, range[1] || metadata.max])
+		} else {
+			setRange([range[0] || metadata.min, val])
+		}
+	}
 
 	const handleFormChange = useDebounce((form: HTMLFormElement) => {
 		submit(form)
@@ -59,7 +89,7 @@ function FilterItem() {
 						</div>
 
 						{/* Range amount */}
-						<div className="flex-1">
+						<div className="flex-1 space-y-1">
 							<Label htmlFor={id}>Amount</Label>
 							<div className="flex gap-5">
 								<Input
@@ -69,29 +99,30 @@ function FilterItem() {
 									value={range[0]}
 									onChange={(e) => {
 										const value = e.target.value
-										setRange((prev) => {
-											const [min, max] = prev
-											if (value === '') return [min, 0]
-											return [min || 0, parseInt(value) || 100]
-										})
+										setRangeChange(value, 0)
 									}}
+									max={metadata.min}
 								/>
 								<Input
 									type="number"
 									name="max"
 									placeholder="Max"
 									value={range[1]}
+									min={metadata.max}
 									onChange={(e) => {
 										const value = e.target.value
-										setRange((prev) => {
-											const [min, max] = prev
-											if (value === '') return [min, 0]
-											return [min, parseInt(value)]
-										})
+										setRangeChange(value, 1)
 									}}
 								/>
 							</div>
-							<Slider.Root defaultValue={[100, 0]} step={10}>
+							<Slider.Root
+								min={metadata.min}
+								max={metadata.max}
+								step={1}
+								defaultValue={[metadata.min, metadata.max]}
+								value={range}
+								onValueChange={(value) => setRange(value)}
+							>
 								<Slider.Track>
 									<Slider.Range />
 								</Slider.Track>
@@ -99,18 +130,16 @@ function FilterItem() {
 								<Slider.Thumb />
 							</Slider.Root>
 						</div>
-						<div className="grid grid-cols-3 gap-2">
-							<Button.Root
-								type="submit"
-								className="col-span-2 flex-1"
-								intent="primary"
-							>
-								<Button.Label>Apply Filter</Button.Label>
-							</Button.Root>
-							<Button.Root type="reset" variant="outlined" intent="primary">
-								<Button.Label>Reset</Button.Label>
-							</Button.Root>
-						</div>
+
+						<Button.Root
+							type="reset"
+							variant="outlined"
+							className="ml-auto"
+							intent="primary"
+							onClick={reset}
+						>
+							<Button.Label>Reset</Button.Label>
+						</Button.Root>
 					</Form>
 					<Popover.Close asChild>
 						<Button.Root variant="ghost" size="sm" intent="gray">
