@@ -61,7 +61,9 @@ export function RenderContenxtMenu<T>({
 
 	return (
 		<ContextMenu.Root>
-			<ContextMenu.Trigger className="contents">{children}</ContextMenu.Trigger>
+			<ContextMenu.Trigger disabled={actions.length < 1} className="contents">
+				{children}
+			</ContextMenu.Trigger>
 
 			<ContextMenu.Portal>
 				<ContextMenu.Content

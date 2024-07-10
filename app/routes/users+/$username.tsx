@@ -1,6 +1,9 @@
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { Spacer } from '#app/components/spacer.tsx'
+
 import Button from '#app/components/ui/button.js'
+import Card from '#app/components/ui/card.js'
+import UserAvatar from '#app/components/user-avatar.js'
 import { prisma } from '#app/utils/db.server.ts'
 import { getUserImgSrc } from '#app/utils/misc.tsx'
 import { useOptionalUser } from '#app/utils/user.ts'
@@ -38,17 +41,14 @@ export default function ProfileRoute() {
 		<div className="container mb-48 mt-36 flex flex-col items-center justify-center">
 			<Spacer size="4xs" />
 
-			<div className="bg-muted container flex flex-col items-center rounded-3xl p-12">
-				<div className="relative w-52">
-					<div className="absolute -top-40">
-						<div className="relative">
-							<img
-								src={getUserImgSrc(data.user.image?.id)}
-								alt={userDisplayName}
-								className="h-52 w-52 rounded-full object-cover outline outline-primary-200"
-							/>
-						</div>
-					</div>
+			<Card className="container flex-col items-center rounded-3xl p-12">
+				<div className="relative">
+					<UserAvatar
+						title={userDisplayName}
+						description={user.username}
+						imageId={user.image?.id}
+						size="2xl"
+					/>
 				</div>
 
 				<Spacer size="sm" />
@@ -82,15 +82,15 @@ export default function ProfileRoute() {
 								</Button.Root>
 							</>
 						) : (
-							<Button.Root>
-								<Link to="notes" prefetch="intent">
-									{userDisplayName}'s notes
-								</Link>
-							</Button.Root>
+							<Link to={`/transfer?to=${user.username}`} prefetch="intent">
+								<Button.Root>
+									<Button.Label>Send 💖 {userDisplayName}</Button.Label>
+								</Button.Root>
+							</Link>
 						)}
 					</div>
 				</div>
-			</div>
+			</Card>
 		</div>
 	)
 }

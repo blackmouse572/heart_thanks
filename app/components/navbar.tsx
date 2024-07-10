@@ -1,6 +1,6 @@
 import { cn } from '#app/utils/misc.js'
-import { useOptionalUser } from '#app/utils/user.js'
-import { Link, useLocation, useMatches } from '@remix-run/react'
+import { useOptionalUser, useUser } from '#app/utils/user.js'
+import { Form, Link, useLocation, useMatches } from '@remix-run/react'
 import { useEffect, useState } from 'react'
 import { SearchBar } from './search-bar'
 import Button from './ui/button'
@@ -10,6 +10,7 @@ type NavbarItem = {
 	title: string
 	href: string
 	icon?: React.ReactNode
+	displayType?: 'user' | 'guest' | 'admin' | 'all' // default is all
 }
 
 const NAVBAR_ITEMS: NavbarItem[] = [
@@ -18,11 +19,29 @@ const NAVBAR_ITEMS: NavbarItem[] = [
 		href: '/',
 		icon: <Icon name="home" />,
 	},
-
 	{
 		title: 'Transfer History',
 		href: '/history',
+		displayType: 'user',
 		icon: <Icon name="transfer" />,
+	},
+	{
+		title: 'Login',
+		href: '/login',
+		icon: <Icon name="lock-open-1" />,
+		displayType: 'guest',
+	},
+	{
+		title: 'Profile',
+		href: '/settings/profile',
+		icon: <Icon name="avatar" />,
+		displayType: 'user',
+	},
+	{
+		title: 'Admin Panel',
+		href: '/admin',
+		icon: <Icon name="layout-dashboard" />,
+		displayType: 'admin',
 	},
 ]
 
@@ -115,29 +134,62 @@ export function SiteHeader() {
 
 							<div
 								className={cn(
-									'space-y-6 py-4 lg:flex lg:gap-1 lg:space-y-0 lg:py-0',
+									'items-center space-y-6 py-4 lg:flex lg:gap-1 lg:space-y-0 lg:py-0',
 								)}
 							>
-								{NAVBAR_ITEMS.map(({ href, title, icon }) => (
-									<NavLink isActive={href === pathname} key={href} href={href}>
-										<div className="flex items-center gap-1">
-											{icon}
-											{title}
-										</div>
-									</NavLink>
-								))}
+								{NAVBAR_ITEMS.map(({ href, title, icon, displayType }) => {
+									if (
+										(displayType === 'user' || displayType === 'admin') &&
+										!user
+									)
+										return null
+									if (displayType === 'guest' && user) return null
+									if (
+										displayType === 'admin' &&
+										user?.roles.find((a) => a.name === 'admin') === undefined
+									)
+										return null
+
+									return (
+										<NavLink
+											isActive={href === pathname}
+											key={href}
+											href={href}
+										>
+											<div className="flex items-center gap-1">
+												{icon}
+												{title}
+											</div>
+										</NavLink>
+									)
+								})}
+								{user && (
+									<Button.Root size="sm" intent="secondary" href="/transfer">
+										<Button.Icon>
+											<Icon name="plus" />
+										</Button.Icon>
+										<Button.Label>Give love</Button.Label>
+									</Button.Root>
+								)}
 							</div>
 						</nav>
 					</div>
 
 					<div className="hidden gap-2 lg:flex">
 						{user ? (
-							<Button.Root intent="secondary" href="/transfer">
-								<Button.Icon>
-									<Icon name="plus" />
-								</Button.Icon>
-								<Button.Label>Give love</Button.Label>
-							</Button.Root>
+							<Form action="/logout" method="POST" className="mt-3">
+								<Button.Root
+									type="submit"
+									variant="outlined"
+									intent="danger"
+									size="md"
+								>
+									<Button.Icon type="leading">
+										<Icon name="exit" />
+									</Button.Icon>
+									<Button.Label>Logout</Button.Label>
+								</Button.Root>
+							</Form>
 						) : (
 							<Button.Root
 								href="/login"
@@ -155,7 +207,7 @@ export function SiteHeader() {
 				<div
 					onClick={() => setIsOpen(false)}
 					data-state={isOpen ? 'open' : 'closed'}
-					className="data-[state=open]:animate-overlayShow fixed inset-0 z-[9] bg-white/50 dark:bg-[--overlay-bg] lg:hidden"
+					className="fixed inset-0 z-[9] bg-white/50 data-[state=open]:animate-overlayShow dark:bg-[--overlay-bg] lg:hidden"
 					aria-hidden
 					data-aria-hidden="true"
 				/>

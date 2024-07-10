@@ -22,16 +22,17 @@ function FilterItem({ metadata }: FilterItemProps) {
 	const location = useLocation()
 	const submit = useSubmit()
 	const isSubmitting = useIsPending()
-	const [range, setRange] = React.useState([
-		metadata.filter.min,
-		metadata.filter.max,
-	])
+	console.log(metadata)
+	const [range, setRange] = React.useState(() =>
+		filter.min ? [filter.min, filter.max] : [metadata.min, metadata.max],
+	)
 
 	const reset = () => {
 		const data = new FormData()
 		data.append('search', '')
 		data.append('min', metadata.min.toString())
 		data.append('max', metadata.max.toString())
+		setRange([metadata.min, metadata.max])
 		submit(data)
 	}
 
@@ -101,14 +102,16 @@ function FilterItem({ metadata }: FilterItemProps) {
 										const value = e.target.value
 										setRangeChange(value, 0)
 									}}
-									max={metadata.min}
+									max={metadata.max}
+									min={metadata.min}
 								/>
 								<Input
 									type="number"
 									name="max"
 									placeholder="Max"
 									value={range[1]}
-									min={metadata.max}
+									min={metadata.min}
+									max={metadata.max}
 									onChange={(e) => {
 										const value = e.target.value
 										setRangeChange(value, 1)

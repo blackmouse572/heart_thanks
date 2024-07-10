@@ -85,7 +85,6 @@ type LoaderDataUser = Awaited<
 const columnsDef: ColumnDef<LoaderDataUser>[] = [
 	{
 		id: 'select',
-
 		header: ({ table }) => (
 			<Checkbox
 				checked={
@@ -127,6 +126,7 @@ const columnsDef: ColumnDef<LoaderDataUser>[] = [
 			return (
 				<UserAvatar
 					imageId={user.image?.id}
+					href={`/users/${user.username}`}
 					title={user.name ?? user.username}
 					description={user.username}
 				/>
@@ -142,6 +142,7 @@ const columnsDef: ColumnDef<LoaderDataUser>[] = [
 			return (
 				<UserAvatar
 					imageId={user.image?.id}
+					href={`/users/${user.username}`}
 					title={user.name ?? user.username}
 					description={user.username}
 				/>
@@ -163,7 +164,7 @@ const columnsDef: ColumnDef<LoaderDataUser>[] = [
 	{
 		accessorKey: 'createdAt',
 		header: 'Transfer At',
-		enableSorting: false,
+		enableSorting: true,
 		cell: (cell) => {
 			const date = cell.getValue() as string
 			const localeDate = new Date(date).toLocaleDateString()
@@ -171,15 +172,19 @@ const columnsDef: ColumnDef<LoaderDataUser>[] = [
 		},
 	},
 ]
+export { columnsDef as historyColumnDef }
+export type { LoaderDataUser as HistoryData }
 function HistoryPage() {
 	const { user, metadata } = useLoaderData<typeof loader>()
 	return (
 		<div className="container mt-5">
 			<DataTable
 				metadata={metadata as any}
+				withPagination
 				title={`History Transaction`}
 				description={`Showing ${metadata.take}/${metadata.totals} transactions`}
 				columns={columnsDef}
+				className="max-h-[500px] w-full overflow-y-auto"
 				data={user as unknown as any}
 				actions={[
 					[

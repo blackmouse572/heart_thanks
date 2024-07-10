@@ -16,6 +16,7 @@ import {
 	useActionData,
 	useLoaderData,
 	useNavigation,
+	useSearchParams,
 } from '@remix-run/react'
 import React, { useCallback, useEffect } from 'react'
 import { z } from 'zod'
@@ -258,6 +259,7 @@ type UserSelectorProps = {
 function UserSelector({ field, users }: UserSelectorProps) {
 	const [open, setOpen] = React.useState(false)
 	const [value, setValue] = React.useState(users[0]?.id ?? '')
+	const [searchParams, setSearchParams] = useSearchParams()
 	const control = useInputControl(field as any)
 
 	const currentUser = users?.find((user) => user.id === value)
@@ -266,6 +268,15 @@ function UserSelector({ field, users }: UserSelectorProps) {
 		// sync
 		control.change(value)
 	}, [])
+
+	useEffect(() => {
+		const to = searchParams.get('to')
+		if (!to) return
+		const user = users.find((u) => u.username === to)
+		if (user) {
+			setValue(user.id)
+		}
+	}, [searchParams])
 
 	const onChange = useCallback((newValue: string) => {
 		const [id] = newValue.split('|')

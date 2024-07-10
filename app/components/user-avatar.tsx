@@ -1,26 +1,41 @@
 import { getUserImgSrc } from '#app/utils/misc.js'
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
+import { AvatarRootProps } from '@tailus/themer'
+import Avatar from './ui/avatar.js'
 import { Caption } from './ui/caption'
 import { Text } from './ui/text'
+import { Link } from '@remix-run/react'
 
 type UserAvatarProps = {
 	imageId?: string
-	size?: number
 	title?: string
 	description?: string
-}
-function UserAvatar({ imageId, size, title, description }: UserAvatarProps) {
+	href?: string
+} & AvatarRootProps
+function UserAvatar({
+	imageId,
+	href,
+	size,
+	title,
+	description,
+	...props
+}: UserAvatarProps) {
+	const Container = href ? Link : 'div'
 	return (
-		<div className="flex items-center gap-2">
-			<Avatar>
-				<AvatarImage src={getUserImgSrc(imageId)} alt={title} />
-				<AvatarFallback>{title}</AvatarFallback>
-			</Avatar>
+		<Container to={href || ''} className="flex items-center gap-2">
+			<Avatar.Root size={size} {...props}>
+				<Avatar.Image src={getUserImgSrc(imageId)} alt={title} />
+				<Avatar.Fallback>{title}</Avatar.Fallback>
+			</Avatar.Root>
 			<div>
-				<Text>{title}</Text>
+				<Text
+					weight={'medium'}
+					size={size === '2xl' ? 'lg' : size === 'xl' ? 'base' : 'sm'}
+				>
+					{title}
+				</Text>
 				<Caption>{description}</Caption>
 			</div>
-		</div>
+		</Container>
 	)
 }
 
