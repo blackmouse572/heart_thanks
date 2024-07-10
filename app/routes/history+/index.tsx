@@ -23,7 +23,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 	const metadata = getMetadata(request)
 	const { search, min, max, sort } = metadata
 	const sortObj = parseSort(sort)
-	console.log(sortObj)
 	const where = {
 		AND: [
 			{

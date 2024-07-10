@@ -29,7 +29,6 @@ const columnDef = [
 		.filter((a) => a.id !== 'select'),
 ]
 function RecentTransactions({ data }: RecentTransactionsProps) {
-	console.log(data)
 	return (
 		<DataTable
 			withPagination={false}

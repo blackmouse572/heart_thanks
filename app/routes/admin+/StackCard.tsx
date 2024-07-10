@@ -29,7 +29,7 @@ function StackedCards({ data, isLoading = false }: StackedCardsProps) {
 				) : (
 					label
 				)}
-				<div className="mt-2 flex items-center justify-between gap-3">
+				<div className="mt-2 flex items-center justify-between gap-2">
 					<Title as="span">{value}</Title>
 					{diff && (
 						<div

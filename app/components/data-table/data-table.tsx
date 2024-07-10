@@ -82,7 +82,6 @@ export function DataTable<TData, TValue>({
 		...options,
 	})
 	useEffect(() => {
-		console.log(sorting)
 		if (!sorting.length || sorting.length <= 0) return
 		const formData = new FormData()
 		formData.append('sort', JSON.stringify(sorting))

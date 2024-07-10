@@ -15,7 +15,6 @@ function TablePagination({ metadata }: PaginationProps) {
 	const [searchParams, setSearchParams] = useSearchParams()
 	const getPaginationHref = useCallback(
 		(page: number) => {
-			console.log(page)
 			const newSearchParams = new URLSearchParams(searchParams)
 			newSearchParams.set('skip', String(page * take - take))
 			newSearchParams.set('take', String(take))

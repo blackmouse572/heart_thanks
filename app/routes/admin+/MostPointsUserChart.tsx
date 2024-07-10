@@ -29,7 +29,7 @@ function MostPointUserChart({
 	isLoading = false,
 }: MostPointsUserChartProps) {
 	return (
-		<Card variant="outlined">
+		<>
 			<div>
 				<Title as="h2" size="lg" weight="medium" className="mb-1">
 					Most Points User
@@ -112,7 +112,7 @@ function MostPointUserChart({
 					</ResponsiveContainer>
 				)}
 			</AspectRatio>
-		</Card>
+		</>
 	)
 }
 

@@ -1,20 +1,22 @@
 import type { ReactNode } from 'react'
 import { twMerge } from 'tailwind-merge'
-import Button from './button'
+import Button, { ButtonProps } from './button'
 
 export const Root = ({
 	isActive = false,
 	link,
+	intent,
 	children,
 }: {
 	isActive?: boolean
 	children: ReactNode
+	intent?: ButtonProps['intent']
 	link: string
 }) => (
 	<Button.Root
 		href={link}
 		variant={isActive ? 'outlined' : 'ghost'}
-		intent="gray"
+		intent={intent ?? 'gray'}
 		className={twMerge(
 			'justify-start gap-3.5 px-4',
 			isActive &&

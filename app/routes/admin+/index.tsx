@@ -1,11 +1,17 @@
 import { prisma } from '#app/utils/db.server.js'
 import { requireUserWithRole } from '#app/utils/permissions.server.js'
 import { ActionFunctionArgs } from '@remix-run/node'
-import { Await, defer, useLoaderData } from '@remix-run/react'
+import { Await, defer, NavLink, useLoaderData } from '@remix-run/react'
 import React from 'react'
 import StackedCards from './StackCard'
 import MostPointUserChart from './MostPointsUserChart'
 import RecentTransactions from './RecentTransactions'
+import { Icon } from '#app/components/ui/icon.js'
+import { Text } from '#app/components/ui/text.js'
+import Card from '#app/components/ui/card.js'
+import { Title } from '#app/components/ui/title.js'
+import * as Link from '#app/components/ui/link.js'
+import { Caption } from '#app/components/ui/caption.js'
 export async function loader({ request }: ActionFunctionArgs) {
 	await requireUserWithRole(request, 'admin')
 	const yesterday = new Date(new Date().setDate(new Date().getDate() - 1))
@@ -88,7 +94,7 @@ export async function loader({ request }: ActionFunctionArgs) {
 
 	const mostPointsUser = prisma.user
 		.findMany({
-			take: 10,
+			take: 5,
 			orderBy: {
 				points: 'desc',
 			},
@@ -97,7 +103,7 @@ export async function loader({ request }: ActionFunctionArgs) {
 
 	const recentTransactions = prisma.transactions
 		.findMany({
-			take: 10,
+			take: 5,
 			orderBy: {
 				createdAt: 'desc',
 			},
@@ -202,17 +208,56 @@ function AdminPage() {
 			</React.Suspense>
 
 			<div className="grid gap-6 lg:grid-cols-2">
-				<React.Suspense
-					fallback={<MostPointUserChart isLoading mostPointsUser={[]} />}
-				>
-					<Await resolve={Promise.all([mostPointsUser])}>
-						{([mostPointsUser]) => {
-							return (
-								<MostPointUserChart mostPointsUser={mostPointsUser as any} />
-							)
-						}}
-					</Await>
-				</React.Suspense>
+				<div className="flex flex-col gap-4">
+					<Card variant="outlined">
+						<Title>Quick access</Title>
+						<Caption>
+							You can change this on{' '}
+							<NavLink to="/admin/settings">setting</NavLink>
+						</Caption>
+						<div className="mt-5 grid grid-cols-2">
+							<Link.Root link="/admin/users" intent="primary">
+								<Link.Icon>
+									<Icon name="avatar" />
+								</Link.Icon>
+								<Link.Label>
+									<Text>User Manager</Text>
+								</Link.Label>
+							</Link.Root>
+							<Link.Root link="/admin/transactions" intent="secondary">
+								<Link.Icon>
+									<Icon name="transfer" />
+								</Link.Icon>
+								<Link.Label>
+									<Text>Transactions History</Text>
+								</Link.Label>
+							</Link.Root>
+							<Link.Root link="/admin/settings" intent="danger">
+								<Link.Icon>
+									<Icon name="chevron-up-right" />
+								</Link.Icon>
+								<Link.Label>
+									<Text>Application Settings</Text>
+								</Link.Label>
+							</Link.Root>
+						</div>
+					</Card>
+					<Card variant="outlined" className="flex-1">
+						<React.Suspense
+							fallback={<MostPointUserChart isLoading mostPointsUser={[]} />}
+						>
+							<Await resolve={Promise.all([mostPointsUser])}>
+								{([mostPointsUser]) => {
+									return (
+										<MostPointUserChart
+											mostPointsUser={mostPointsUser as any}
+										/>
+									)
+								}}
+							</Await>
+						</React.Suspense>
+					</Card>
+				</div>
 				<React.Suspense
 					fallback={<MostPointUserChart isLoading mostPointsUser={[]} />}
 				>

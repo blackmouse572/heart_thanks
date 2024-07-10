@@ -61,7 +61,7 @@ export default function NotesRoute() {
 									</NavLink>
 								</li>
 							) : null}
-							{data.owner.notes.map((note) => (
+							{/* {data.owner.notes.map((note) => (
 								<li key={note.id} className="p-1 pr-0">
 									<NavLink
 										to={note.id}
@@ -74,7 +74,7 @@ export default function NotesRoute() {
 										{note.title}
 									</NavLink>
 								</li>
-							))}
+							))} */}
 						</ul>
 					</div>
 				</div>
