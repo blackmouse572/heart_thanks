@@ -164,6 +164,37 @@ async function seed() {
 	})
 	console.timeEnd(`📝 Created transactions...`)
 
+	console.time(`⚙️ Created settings...`)
+	const totalSettings = 5
+	for (let index = 0; index < totalSettings; index++) {
+		await prisma.applicationSetting.create({
+			data: {
+				title: `Setting ${index + 1}`,
+				description: `Description for setting ${index + 1}`,
+				allowTransfer: true,
+				averagePoints: 30,
+				isUsed: false,
+				minTransfer: 1,
+				maxTransfer: 30,
+			},
+		})
+	}
+	console.timeEnd(`⚙️ Created settings...`)
+
+	console.time(`⚙️ Created current setting...`)
+	await prisma.applicationSetting.create({
+		data: {
+			title: `Default setting`,
+			description: `This setting is a template, you should stick with it if you don't know what to do.`,
+			allowTransfer: true,
+			averagePoints: 30,
+			isUsed: true,
+			minTransfer: 1,
+			maxTransfer: 30,
+		},
+	})
+	console.timeEnd(`⚙️ Created current setting...`)
+
 	console.timeEnd(`🌱 Database has been seeded`)
 }
 

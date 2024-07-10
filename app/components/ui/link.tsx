@@ -7,10 +7,12 @@ export const Root = ({
 	link,
 	intent,
 	children,
+	...props
 }: {
 	isActive?: boolean
 	children: ReactNode
 	intent?: ButtonProps['intent']
+	variant?: ButtonProps['variant']
 	link: string
 }) => (
 	<Button.Root
@@ -22,6 +24,7 @@ export const Root = ({
 			isActive &&
 				'bg-white dark:bg-gray-500/10 dark:!shadow-none dark:[--btn-border-color:theme(colors.transparent)]',
 		)}
+		{...props}
 	>
 		{children}
 	</Button.Root>

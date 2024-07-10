@@ -42,6 +42,20 @@ model Transactions {
   @@map("Transactions")
 }
 
+model ApplicationSetting {
+  id            String    @id @default(cuid())
+  title         String
+  description   String?
+  isUsed        Boolean   @default(false)
+  averagePoints Int       @default(30) // average points for each user per quater
+  minTransfer   Int       @default(1) // minimal transfer amount
+  maxTransfer   Int       @default(30) // max transfer amount, this will be overriden by user's points (if user has less points than this value)
+  allowTransfer Boolean   @default(true) // allow transfer between users
+  createdAt     DateTime  @default(now())
+  deletedAt     DateTime?
+  updatedAt     DateTime  @updatedAt
+}
+
 // model NoteImage {
 //   id          String       @id @default(cuid())
 //   altText     String?
