@@ -1,6 +1,6 @@
-import { Caption } from '#app/components/ui/caption.js'
+import { Caption } from '#app/components/ui/typography/caption.js'
 import Card from '#app/components/ui/card.js'
-import { Title } from '#app/components/ui/title.js'
+import { Title } from '#app/components/ui/typography/title.js'
 import Custom from '#app/components/ui/visualizations/Tooltip.js'
 import { cartesianGrid, area } from '@tailus/themer'
 import {

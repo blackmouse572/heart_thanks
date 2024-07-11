@@ -23,8 +23,8 @@ import { useIsPending } from '#app/utils/misc.tsx'
 import { PasswordSchema, UsernameSchema } from '#app/utils/user-validation.ts'
 import { handleNewSession } from './login.server.ts'
 import Card from '#app/components/ui/card.js'
-import { Caption } from '#app/components/ui/caption.js'
-import { Text } from '#app/components/ui/text.js'
+import { Caption } from '#app/components/ui/typography/caption.js'
+import { Text } from '#app/components/ui/typography/text.js'
 
 const LoginFormSchema = z.object({
 	username: UsernameSchema,

@@ -24,8 +24,8 @@ import { PasswordSchema } from '#app/utils/user-validation.ts'
 import { type BreadcrumbHandle } from './profile.tsx'
 import Button from '#app/components/ui/button.js'
 import Card from '#app/components/ui/card.js'
-import { Title } from '#app/components/ui/title.js'
-import { Caption } from '#app/components/ui/caption.js'
+import { Title } from '#app/components/ui/typography/title.js'
+import { Caption } from '#app/components/ui/typography/caption.js'
 import SeparatorRoot from '#app/components/ui/seperator.js'
 
 export const handle: BreadcrumbHandle & SEOHandle = {

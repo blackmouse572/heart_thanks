@@ -7,11 +7,11 @@ import StackedCards from './StackCard'
 import MostPointUserChart from './MostPointsUserChart'
 import RecentTransactions from './RecentTransactions'
 import { Icon } from '#app/components/ui/icon.js'
-import { Text } from '#app/components/ui/text.js'
+import { Text } from '#app/components/ui/typography/text.js'
 import Card from '#app/components/ui/card.js'
-import { Title } from '#app/components/ui/title.js'
+import { Title } from '#app/components/ui/typography/title.js'
 import * as Link from '#app/components/ui/link.js'
-import { Caption } from '#app/components/ui/caption.js'
+import { Caption } from '#app/components/ui/typography/caption.js'
 export async function loader({ request }: ActionFunctionArgs) {
 	await requireUserWithRole(request, 'admin')
 	const yesterday = new Date(new Date().setDate(new Date().getDate() - 1))

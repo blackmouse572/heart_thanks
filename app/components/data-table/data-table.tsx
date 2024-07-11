@@ -12,7 +12,7 @@ import {
 	type ContextMenuItem,
 	RenderContenxtMenu,
 } from '#app/components/data-table/context-menu.js'
-import { Caption } from '#app/components/ui/caption.js'
+import { Caption } from '#app/components/ui/typography/caption.js'
 import Card from '#app/components/ui/card.js'
 import {
 	Table,
@@ -22,7 +22,7 @@ import {
 	TableHeader,
 	TableRow,
 } from '#app/components/ui/table/index.js'
-import { Title } from '#app/components/ui/title.js'
+import { Title } from '#app/components/ui/typography/title.js'
 import { Icon } from '../ui/icon'
 import { cn } from '#app/utils/misc.js'
 import { useSearchParams, useSubmit } from '@remix-run/react'

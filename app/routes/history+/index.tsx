@@ -4,9 +4,9 @@ import { type ColumnDef } from '@tanstack/react-table'
 import { toast } from 'sonner'
 import Checkbox from '#app/components/checkbox'
 import DataTable from '#app/components/data-table/data-table.js'
-import { Caption } from '#app/components/ui/caption.js'
+import { Caption } from '#app/components/ui/typography/caption.js'
 import { Icon } from '#app/components/ui/icon.js'
-import { Text } from '#app/components/ui/text'
+import { Text } from '#app/components/ui/typography/text.js'
 import UserAvatar from '#app/components/user-avatar.js'
 import {
 	getMaxTransactionAmount,

@@ -1,5 +1,5 @@
 import Checkbox, { CheckboxProps } from '#app/components/ui/checkbox'
-import Label from '#app/components/ui/label.js'
+import Label from '#app/components/ui/typography/label.js'
 import { useInputControl } from '@conform-to/react'
 import { REGEXP_ONLY_DIGITS_AND_CHARS, type OTPInputProps } from 'input-otp'
 import React, { useId } from 'react'

@@ -25,8 +25,8 @@ import { verifySessionStorage } from '#app/utils/verification.server.ts'
 import { EmailChangeEmail } from './profile.change-email.server.tsx'
 import { type BreadcrumbHandle } from './profile.tsx'
 import Card from '#app/components/ui/card.js'
-import { Title } from '#app/components/ui/title.js'
-import { Caption } from '#app/components/ui/caption.js'
+import { Title } from '#app/components/ui/typography/title.js'
+import { Caption } from '#app/components/ui/typography/caption.js'
 
 export const handle: BreadcrumbHandle & SEOHandle = {
 	breadcrumb: <Icon name="envelope-closed">Change Email</Icon>,

@@ -1,5 +1,5 @@
 import DataTable from '#app/components/data-table/data-table.js'
-import { Caption } from '#app/components/ui/caption.js'
+import { Caption } from '#app/components/ui/typography/caption.js'
 import { Transactions } from '@prisma/client'
 import { ColumnDef } from '@tanstack/react-table'
 import { historyColumnDef, HistoryData } from '../history+'

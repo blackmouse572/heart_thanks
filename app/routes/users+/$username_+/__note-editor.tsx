@@ -18,7 +18,7 @@ import { floatingToolbarClassName } from '#app/components/floating-toolbar.tsx'
 import { ErrorList, Field, TextareaField } from '#app/components/forms.tsx'
 import { Button } from '#app/components/ui/button.tsx'
 import { Icon } from '#app/components/ui/icon.tsx'
-import { Label } from '#app/components/ui/label.tsx'
+import { Label } from '#app/components/ui/typography/label.js'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
 import { Textarea } from '#app/components/ui/textarea.tsx'
 import { cn, getNoteImgSrc, useIsPending } from '#app/utils/misc.tsx'
@@ -118,10 +118,10 @@ export function NoteEditor({
 									return (
 										<li
 											key={image.key}
-											className="relative border-b-2 border-muted-foreground"
+											className="border-muted-foreground relative border-b-2"
 										>
 											<button
-												className="absolute right-0 top-0 text-foreground-destructive"
+												className="text-foreground-destructive absolute right-0 top-0"
 												{...form.remove.getButtonProps({
 													name: fields.images.name,
 													index,
@@ -199,13 +199,13 @@ function ImageChooser({ meta }: { meta: FieldMetadata<ImageFieldset> }) {
 										className="h-32 w-32 rounded-lg object-cover"
 									/>
 									{existingImage ? null : (
-										<div className="pointer-events-none absolute -right-0.5 -top-0.5 rotate-12 rounded-sm bg-secondary px-2 py-1 text-xs text-secondary-foreground shadow-md">
+										<div className="bg-secondary text-secondary-foreground pointer-events-none absolute -right-0.5 -top-0.5 rotate-12 rounded-sm px-2 py-1 text-xs shadow-md">
 											new
 										</div>
 									)}
 								</div>
 							) : (
-								<div className="flex h-32 w-32 items-center justify-center rounded-lg border border-muted-foreground text-4xl text-muted-foreground">
+								<div className="border-muted-foreground text-muted-foreground flex h-32 w-32 items-center justify-center rounded-lg border text-4xl">
 									<Icon name="plus" />
 								</div>
 							)}

@@ -14,9 +14,9 @@ import { generateTOTP } from '#app/utils/totp.server.ts'
 import { twoFAVerificationType } from './profile.two-factor.tsx'
 import { twoFAVerifyVerificationType } from './profile.two-factor.verify.tsx'
 import Card from '#app/components/ui/card.js'
-import { Text } from '#app/components/ui/text.js'
-import { Title } from '#app/components/ui/title.js'
-import { Caption } from '#app/components/ui/caption.js'
+import { Text } from '#app/components/ui/typography/text.js'
+import { Title } from '#app/components/ui/typography/title.js'
+import { Caption } from '#app/components/ui/typography/caption.js'
 
 export const handle: SEOHandle = {
 	getSitemapEntries: () => null,

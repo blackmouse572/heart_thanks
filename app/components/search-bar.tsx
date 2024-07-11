@@ -1,4 +1,4 @@
-import Label from '#app/components/ui/label.tsx'
+import Label from '#app/components/ui/typography/label.js'
 import { useDebounce, useIsPending } from '#app/utils/misc.tsx'
 import { Form, useSearchParams, useSubmit } from '@remix-run/react'
 import { useId } from 'react'

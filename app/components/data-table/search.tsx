@@ -1,7 +1,7 @@
 import Button from '#app/components/ui/button.js'
 import { Icon } from '#app/components/ui/icon.js'
 import { Input } from '#app/components/ui/input.js'
-import Label from '#app/components/ui/label.js'
+import Label from '#app/components/ui/typography/label.js'
 import { StatusButton } from '#app/components/ui/status-button.js'
 import { useDebounce, useIsPending } from '#app/utils/misc.js'
 import { Form, useLocation, useSearchParams, useSubmit } from '@remix-run/react'

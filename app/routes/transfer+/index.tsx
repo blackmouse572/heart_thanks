@@ -3,6 +3,7 @@ import {
 	getFieldsetProps,
 	getFormProps,
 	getInputProps,
+	useField,
 	useForm,
 	useInputControl,
 } from '@conform-to/react'
@@ -22,7 +23,7 @@ import React, { useCallback, useEffect } from 'react'
 import { z } from 'zod'
 import { Field } from '#app/components/forms.tsx'
 import Button from '#app/components/ui/button.js'
-import { Caption } from '#app/components/ui/caption.tsx'
+import { Caption } from '#app/components/ui/typography/caption.js'
 import { Card } from '#app/components/ui/card.tsx'
 import {
 	Command,
@@ -31,11 +32,11 @@ import {
 	CommandItem,
 	CommandList,
 } from '#app/components/ui/command.js'
-import { Display } from '#app/components/ui/display.tsx'
+import { Display } from '#app/components/ui/typography/display.js'
 import { Icon } from '#app/components/ui/icon.js'
 import Popover from '#app/components/ui/popover.tsx'
-import { Text } from '#app/components/ui/text.tsx'
-import { Title } from '#app/components/ui/title.tsx'
+import { Text } from '#app/components/ui/typography/text.js'
+import { Title } from '#app/components/ui/typography/title.js'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.js'
 import { cn, getUserImgSrc } from '#app/utils/misc.js'
@@ -44,10 +45,14 @@ import { checkHoneypot } from '#app/utils/honeypot.server.js'
 import { transferHandler } from './transfer.server'
 import Banner from '#app/components/ui/banner.js'
 import { redirectWithToast } from '#app/utils/toast.server.js'
+import Label from '#app/components/ui/typography/label.js'
 
 const TransferSchema = z.object({
 	amount: z.number(),
 	recipientId: z.string(),
+	reviewerId: z.string(),
+	title: z.string().min(3).max(100),
+	description: z.string().max(1024).optional(),
 })
 export async function loader({ request }: LoaderFunctionArgs) {
 	// require the user to be logged in
@@ -195,6 +200,33 @@ function TransferPage() {
 							<fieldset disabled={isSubmitting} className="space-y-8">
 								<Field
 									labelProps={{
+										htmlFor: fields.title.id,
+										children: 'Title',
+									}}
+									inputProps={{
+										...getInputProps(fields.title, {
+											type: 'text',
+										}),
+										autoComplete: 'title',
+										className: 'lowercase',
+										required: true,
+									}}
+									errors={fields.amount.errors}
+								/>
+								<Field
+									labelProps={{
+										htmlFor: fields.description.id,
+										children: 'Description',
+									}}
+									inputProps={{
+										...getInputProps(fields.description, { type: 'text' }),
+										autoComplete: 'description',
+										className: 'lowercase',
+									}}
+									errors={fields.amount.errors}
+								/>
+								<Field
+									labelProps={{
 										htmlFor: fields.amount.id,
 										children: 'Amount',
 									}}
@@ -211,10 +243,14 @@ function TransferPage() {
 									<Await resolve={others} errorElement={<p>Error</p>}>
 										{(users) => {
 											return (
-												<UserSelector
-													field={fields.recipientId}
-													users={users as any}
-												/>
+												<>
+													<UserSelector
+														field={fields.recipientId}
+														label={'Recipient'}
+														labelProps={{ htmlFor: fields.recipientId.id }}
+														users={users as any}
+													/>
+												</>
 											)
 										}}
 									</Await>
@@ -255,8 +291,10 @@ function ErrorAlert({ actionData }: any) {
 type UserSelectorProps = {
 	users: (User & { image: { id: string } })[]
 	field: FieldMetadata
+	label: string
+	labelProps?: React.LabelHTMLAttributes<HTMLLabelElement>
 }
-function UserSelector({ field, users }: UserSelectorProps) {
+function UserSelector({ field, users, label, labelProps }: UserSelectorProps) {
 	const [open, setOpen] = React.useState(false)
 	const [value, setValue] = React.useState(users[0]?.id ?? '')
 	const [searchParams, setSearchParams] = useSearchParams()
@@ -289,36 +327,39 @@ function UserSelector({ field, users }: UserSelectorProps) {
 	return (
 		<Popover.Root open={open} onOpenChange={setOpen}>
 			<Popover.Trigger asChild>
-				<Button.Root
-					size="lg"
-					aria-expanded={open}
-					variant="outlined"
-					className="h-auto min-h-9 w-[400px] justify-between overflow-hidden"
-				>
-					<Button.Label>
-						{currentUser ? (
-							<div className="flex items-center justify-start gap-8 py-2">
-								<img
-									src={getUserImgSrc(currentUser.image.id)}
-									alt={currentUser.name ?? currentUser.username}
-									className="h-6 w-6 rounded-full"
-								/>
-								<div className="text-start">
-									<Text>{currentUser.name}</Text>
-									<Caption>{currentUser.username}</Caption>
+				<div>
+					<Label {...labelProps}>{label}</Label>
+					<Button.Root
+						size="lg"
+						aria-expanded={open}
+						variant="outlined"
+						className="h-auto min-h-9 w-[400px] justify-between overflow-hidden"
+					>
+						<Button.Label>
+							{currentUser ? (
+								<div className="flex items-center justify-start gap-8 py-2">
+									<img
+										src={getUserImgSrc(currentUser.image.id)}
+										alt={currentUser.name ?? currentUser.username}
+										className="h-6 w-6 rounded-full"
+									/>
+									<div className="text-start">
+										<Text>{currentUser.name}</Text>
+										<Caption>{currentUser.username}</Caption>
+									</div>
 								</div>
-							</div>
-						) : (
-							'Select User...'
-						)}
-					</Button.Label>
-					<Button.Icon>
-						<Icon
-							name="chevron-down"
-							className="ml-2 h-4 w-4 shrink-0 opacity-50"
-						/>
-					</Button.Icon>
-				</Button.Root>
+							) : (
+								'Select User...'
+							)}
+						</Button.Label>
+						<Button.Icon>
+							<Icon
+								name="chevron-down"
+								className="ml-2 h-4 w-4 shrink-0 opacity-50"
+							/>
+						</Button.Icon>
+					</Button.Root>
+				</div>
 			</Popover.Trigger>
 			<Popover.Portal>
 				<Popover.Content className="w-[300px] p-0" sideOffset={15}>

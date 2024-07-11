@@ -1,8 +1,8 @@
 import { getUserImgSrc } from '#app/utils/misc.js'
 import { AvatarRootProps } from '@tailus/themer'
 import Avatar from './ui/avatar.js'
-import { Caption } from './ui/caption'
-import { Text } from './ui/text'
+import { Caption } from './ui/typography/caption.js'
+import { Text } from './ui/typography/text.js'
 import { Link } from '@remix-run/react'
 
 type UserAvatarProps = {

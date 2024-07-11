@@ -27,8 +27,8 @@ import { getTOTPAuthUri } from '#app/utils/totp.server.ts'
 import { type BreadcrumbHandle } from './profile.tsx'
 import { twoFAVerificationType } from './profile.two-factor.tsx'
 import Card from '#app/components/ui/card.js'
-import { Caption } from '#app/components/ui/caption.js'
-import { Text } from '#app/components/ui/text.js'
+import { Caption } from '#app/components/ui/typography/caption.js'
+import { Text } from '#app/components/ui/typography/text.js'
 
 export const handle: BreadcrumbHandle & SEOHandle = {
 	breadcrumb: <Icon name="check">Verify</Icon>,

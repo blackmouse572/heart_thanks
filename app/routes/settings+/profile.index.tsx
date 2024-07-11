@@ -27,7 +27,7 @@ import Card from '#app/components/ui/card.js'
 import { TabSections } from '#app/components/tab-sections.js'
 import UserAvatar from '#app/components/user-avatar.js'
 import Banner from '#app/components/ui/banner.js'
-import { Text } from '#app/components/ui/text.js'
+import { Text } from '#app/components/ui/typography/text.js'
 
 export const handle: SEOHandle = {
 	getSitemapEntries: () => null,

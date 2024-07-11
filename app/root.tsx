@@ -48,7 +48,7 @@ import { makeTimings, time } from './utils/timing.server.ts'
 import { getToast } from './utils/toast.server.ts'
 import { useUser } from './utils/user.ts'
 import sonnerStyles from '#app/components/ui/sonner.css?url'
-import { Caption } from './components/ui/caption.tsx'
+import { Caption } from './components/ui/typography/caption.tsx'
 
 export const links: LinksFunction = () => {
 	return [
