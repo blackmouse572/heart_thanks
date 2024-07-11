@@ -1,12 +1,11 @@
-import { json, type LoaderFunctionArgs } from '@remix-run/node'
-import { Link, useLoaderData } from '@remix-run/react'
-import { type ColumnDef } from '@tanstack/react-table'
-import { toast } from 'sonner'
 import Checkbox from '#app/components/checkbox'
 import DataTable from '#app/components/data-table/data-table.js'
-import { Caption } from '#app/components/ui/typography/caption.js'
+import Badge from '#app/components/ui/badge.js'
+import Button from '#app/components/ui/button.js'
 import { Icon } from '#app/components/ui/icon.js'
+import { Caption } from '#app/components/ui/typography/caption.js'
 import { Text } from '#app/components/ui/typography/text.js'
+import { Title } from '#app/components/ui/typography/title.js'
 import UserAvatar from '#app/components/user-avatar.js'
 import {
 	getMaxTransactionAmount,
@@ -16,8 +15,11 @@ import {
 } from '#app/routes/history+/history.server.ts'
 import { requireUserId } from '#app/utils/auth.server.js'
 import { getMetadata, parseSort } from '#app/utils/request.server.js'
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import { Link, useLoaderData } from '@remix-run/react'
+import { type ColumnDef } from '@tanstack/react-table'
+import { toast } from 'sonner'
 import FilterItem from './filter'
-import Badge from '#app/components/ui/badge.js'
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const userId = await requireUserId(request)
@@ -210,6 +212,7 @@ const columnsDef: ColumnDef<LoaderDataUser>[] = [
 ]
 export { columnsDef as historyColumnDef }
 export type { LoaderDataUser as HistoryData }
+
 function HistoryPage() {
 	const { user, metadata } = useLoaderData<typeof loader>()
 	return (
@@ -219,6 +222,7 @@ function HistoryPage() {
 				withPagination
 				title={`History Transaction`}
 				description={`Showing ${metadata.take}/${metadata.totals} transactions`}
+				emptyRender={<EmptyTable />}
 				columns={columnsDef}
 				className="max-h-[500px] w-full overflow-y-auto"
 				data={user as unknown as any}
@@ -248,6 +252,30 @@ function HistoryPage() {
 				filter={<FilterItem metadata={metadata as any} />}
 			/>
 			<hr />
+		</div>
+	)
+}
+
+function EmptyTable() {
+	return (
+		<div className="flex flex-col items-center justify-center space-y-8 py-4">
+			<div className="space-y-2 text-center">
+				<Icon
+					name="error-404-off"
+					size="xl"
+					className="h-40 w-40 text-[--body-text-color]"
+				/>
+				<Title size="lg">You don't seem to have any transaction here</Title>
+				<Text>
+					Let transfer some love 💖 to thanks for all the help you got
+				</Text>
+			</div>
+			<Button.Root variant="outlined" intent="secondary" href="/transfer">
+				<Button.Label>Transfer Now</Button.Label>
+				<Button.Icon type="trailing">
+					<Icon name="transfer" />
+				</Button.Icon>
+			</Button.Root>
 		</div>
 	)
 }

@@ -1,3 +1,26 @@
+import { Field, TextareaField } from '#app/components/forms.tsx'
+import Banner from '#app/components/ui/banner.js'
+import Button from '#app/components/ui/button.js'
+import { Card } from '#app/components/ui/card.tsx'
+import {
+	Command,
+	CommandEmpty,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from '#app/components/ui/command.js'
+import { Icon } from '#app/components/ui/icon.js'
+import Popover from '#app/components/ui/popover.tsx'
+import { Caption } from '#app/components/ui/typography/caption.js'
+import { Display } from '#app/components/ui/typography/display.js'
+import Label from '#app/components/ui/typography/label.js'
+import { Text } from '#app/components/ui/typography/text.js'
+import { Title } from '#app/components/ui/typography/title.js'
+import { requireUserId } from '#app/utils/auth.server.ts'
+import { prisma } from '#app/utils/db.server.js'
+import { checkHoneypot } from '#app/utils/honeypot.server.js'
+import { cn, getUserImgSrc } from '#app/utils/misc.js'
+import { redirectWithToast } from '#app/utils/toast.server.js'
 import {
 	FieldMetadata,
 	getFormProps,
@@ -18,32 +41,9 @@ import {
 	useSearchParams,
 } from '@remix-run/react'
 import React, { useCallback, useEffect } from 'react'
-import { z } from 'zod'
-import { Field, TextareaField } from '#app/components/forms.tsx'
-import Button from '#app/components/ui/button.js'
-import { Caption } from '#app/components/ui/typography/caption.js'
-import { Card } from '#app/components/ui/card.tsx'
-import {
-	Command,
-	CommandEmpty,
-	CommandInput,
-	CommandItem,
-	CommandList,
-} from '#app/components/ui/command.js'
-import { Display } from '#app/components/ui/typography/display.js'
-import { Icon } from '#app/components/ui/icon.js'
-import Popover from '#app/components/ui/popover.tsx'
-import { Text } from '#app/components/ui/typography/text.js'
-import { Title } from '#app/components/ui/typography/title.js'
-import { requireUserId } from '#app/utils/auth.server.ts'
-import { prisma } from '#app/utils/db.server.js'
-import { cn, getUserImgSrc } from '#app/utils/misc.js'
 import { HoneypotInputs } from 'remix-utils/honeypot/react'
-import { checkHoneypot } from '#app/utils/honeypot.server.js'
+import { z } from 'zod'
 import { transferHandler } from './transfer.server'
-import Banner from '#app/components/ui/banner.js'
-import { redirectWithToast } from '#app/utils/toast.server.js'
-import Label from '#app/components/ui/typography/label.js'
 
 const TransferSchema = z.object({
 	amount: z.number(),
@@ -276,7 +276,7 @@ function TransferPage() {
 									<Await resolve={others} errorElement={<p>Error</p>}>
 										{(users) => {
 											return (
-												<>
+												<div className="gap-4 lg:flex">
 													<UserSelector
 														field={fields.recipientId}
 														label={'Recipient'}
@@ -289,7 +289,7 @@ function TransferPage() {
 														labelProps={{ htmlFor: fields.reviewerId.id }}
 														users={users as any}
 													/>
-												</>
+												</div>
 											)
 										}}
 									</Await>
@@ -390,20 +390,20 @@ function UserSelector({
 
 	return (
 		<Popover.Root open={open} onOpenChange={setOpen}>
-			<Popover.Trigger asChild>
-				<div>
-					<Label {...labelProps}>{label}</Label>
-					<div className="flex items-center gap-1">
-						<Label
-							{...labelProps}
-							className={cn('text-[--caption-text-color]')}
-						/>
-						{required && (
-							<span className="text-danger-500" aria-hidden="true">
-								*
-							</span>
-						)}
-					</div>
+			<div>
+				<Label {...labelProps}>{label}</Label>
+				<div className="flex items-center gap-1">
+					<Label
+						{...labelProps}
+						className={cn('text-[--caption-text-color]')}
+					/>
+					{required && (
+						<span className="text-danger-500" aria-hidden="true">
+							*
+						</span>
+					)}
+				</div>
+				<Popover.Trigger asChild>
 					<Button.Root
 						size="lg"
 						aria-expanded={open}
@@ -434,11 +434,11 @@ function UserSelector({
 							/>
 						</Button.Icon>
 					</Button.Root>
-				</div>
-			</Popover.Trigger>
+				</Popover.Trigger>
+			</div>
 			<Popover.Portal>
-				<Popover.Content className="w-[300px] p-0" sideOffset={15}>
-					<Command>
+				<Popover.Content className="w-[300px] p-0" fancy>
+					<Command className="border-0 p-0">
 						<CommandInput placeholder="Search user..." />
 						<CommandEmpty>No users found.</CommandEmpty>
 						<CommandList>

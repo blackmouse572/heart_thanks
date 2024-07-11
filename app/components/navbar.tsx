@@ -1,14 +1,14 @@
 import { cn } from '#app/utils/misc.js'
 import { useOptionalUser } from '#app/utils/user.js'
+import { Role } from '@prisma/client'
 import { Form, Link, useLocation } from '@remix-run/react'
 import { useEffect, useState } from 'react'
-import Button from './ui/button'
-import { Icon } from './ui/icon'
-import DropdownMenu from './ui/dropdown'
-import { Role } from '@prisma/client'
-import UserAvatar from './user-avatar'
 import Badge from './ui/badge'
+import Button from './ui/button'
+import DropdownMenu from './ui/dropdown'
+import { Icon } from './ui/icon'
 import { Caption, Title } from './ui/typography'
+import UserAvatar from './user-avatar'
 
 type NavbarItem = {
 	title: string
@@ -255,14 +255,16 @@ const LoggedSideItem = ({ user }: LoggedSideItemProps) => {
 							<Title className="text-sm" as="span" weight="medium">
 								{user.name ?? user.username}
 							</Title>
-							<Caption className="flex flex-wrap gap-2">
-								{user.username}
+							<div className="flex justify-between">
+								<Caption className="flex flex-wrap gap-2">
+									{user.username}
+								</Caption>
 								<Badge size="xs">
 									{user.roles.find((a: Role) => a.name === 'admin')
 										? 'Admin'
 										: 'User'}
 								</Badge>
-							</Caption>
+							</div>
 
 							<div className="mt-4 grid grid-cols-2 gap-3" data-rounded="large">
 								<Button.Root

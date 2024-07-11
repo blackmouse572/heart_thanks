@@ -1,18 +1,7 @@
 import {
-	type ColumnDef,
-	flexRender,
-	getCoreRowModel,
-	type RowSelectionState,
-	type SortingState,
-	type TableOptions,
-	useReactTable,
-} from '@tanstack/react-table'
-import React, { useEffect, useMemo } from 'react'
-import {
 	type ContextMenuItem,
 	RenderContenxtMenu,
 } from '#app/components/data-table/context-menu.js'
-import { Caption } from '#app/components/ui/typography/caption.js'
 import Card from '#app/components/ui/card.js'
 import {
 	Table,
@@ -22,16 +11,28 @@ import {
 	TableHeader,
 	TableRow,
 } from '#app/components/ui/table/index.js'
+import { Caption } from '#app/components/ui/typography/caption.js'
 import { Title } from '#app/components/ui/typography/title.js'
-import { Icon } from '../ui/icon'
 import { cn } from '#app/utils/misc.js'
-import { useSearchParams, useSubmit } from '@remix-run/react'
-import TablePagination from './pagination'
 import { Metadata } from '#app/utils/request.server.js'
+import { useSearchParams, useSubmit } from '@remix-run/react'
+import {
+	type ColumnDef,
+	flexRender,
+	getCoreRowModel,
+	type RowSelectionState,
+	type SortingState,
+	type TableOptions,
+	useReactTable,
+} from '@tanstack/react-table'
+import React, { useEffect, useMemo } from 'react'
+import { Icon } from '../ui/icon'
+import TablePagination from './pagination'
 
 type DataTableProps<TData, TValue> = Partial<TableOptions<TData>> & {
 	columns: ColumnDef<TData, TValue>[]
 	data: TData[]
+	emptyRender?: React.ReactNode
 	title: string
 	description?: React.ReactNode
 	filter?: React.ReactNode
@@ -54,6 +55,7 @@ export function DataTable<TData, TValue>({
 	filter,
 	title,
 	actions,
+	emptyRender,
 	description,
 	withPagination,
 	className,
@@ -127,7 +129,7 @@ export function DataTable<TData, TValue>({
 											key={header.id}
 											onClick={header.column.getToggleSortingHandler()}
 											className={cn(
-												'[&_svg]:inset-0 [&_svg]:right-0 [&_svg]:m-auto ',
+												'[&_svg]:inset-0 [&_svg]:right-0 [&_svg]:m-auto',
 												{
 													'cursor-pointer': sortable,
 													'': sortable,
@@ -191,12 +193,9 @@ export function DataTable<TData, TValue>({
 									</TableRow>
 								))
 							) : (
-								<TableRow>
-									<TableCell
-										colSpan={columns.length}
-										className="h-24 text-center"
-									>
-										No results.
+								<TableRow className="hover:bg-transparent">
+									<TableCell colSpan={columns.length} className="h-full">
+										{emptyRender || 'No data'}
 									</TableCell>
 								</TableRow>
 							)}
