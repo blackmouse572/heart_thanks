@@ -14,10 +14,12 @@ model User {
   name                String?
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
-  points              Int            @default(30)
+  balance             Int            @default(30) // user's points, use to give
+  vault               Int            @default(0) // user's points, cannot give
   connections         Connection[]
   ownTransaction      Transactions[] @relation("owner")
   transferTransaction Transactions[] @relation("receiver")
+  reviewedTransaction Transactions[] @relation("reviewer")
   password            Password?
   sessions            Session[]
   image               UserImage?
@@ -25,16 +27,20 @@ model User {
 }
 
 model Transactions {
-  id         String   @id @default(cuid())
-  amount     Int      @default(0)
-  title      String
-  content    String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  ownerId    String
-  owner      User     @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
-  receiverId String
-  receiver   User     @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  id           String    @id @default(cuid())
+  amount       Int       @default(0)
+  title        String
+  content      String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  ownerId      String
+  owner        User      @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
+  receiverId   String
+  receiver     User      @relation("receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  reviewed     Boolean   @default(false)
+  reviewedAt   DateTime?
+  reviewedById String?
+  reviewBy     User?     @relation("reviewer", fields: [reviewedById], references: [id])
   // images     NoteImage[]
 
   @@index([ownerId])
@@ -47,8 +53,8 @@ model ApplicationSetting {
   title         String
   description   String?
   isUsed        Boolean   @default(false)
-  averagePoints Int       @default(30) // average points for each user per quater
   minTransfer   Int       @default(1) // minimal transfer amount
+  averagePoints Int       @default(30) // average points for each user per quater
   maxTransfer   Int       @default(30) // max transfer amount, this will be overriden by user's points (if user has less points than this value)
   allowTransfer Boolean   @default(true) // allow transfer between users
   createdAt     DateTime  @default(now())

@@ -12,6 +12,7 @@ import {
 import Input, { type InputProps } from './ui/input.tsx'
 import { Textarea } from './ui/textarea.tsx'
 import { Icon } from './ui/icon.tsx'
+import { cn } from '#app/utils/misc.js'
 
 export type ListOfErrors = Array<string | null | undefined> | null | undefined
 
@@ -27,7 +28,7 @@ export function ErrorList({
 	return (
 		<ul id={id} className="flex flex-col gap-1">
 			{errorsToRender.map((e) => (
-				<li key={e} className="text-foreground-destructive text-[10px]">
+				<li key={e} className="text-[10px] text-danger-500">
 					{e}
 				</li>
 			))}
@@ -51,7 +52,18 @@ export function Field({
 	const errorId = errors?.length ? `${id}-error` : undefined
 	return (
 		<div className={className}>
-			<Label htmlFor={id} {...labelProps} />
+			<div className="flex items-center gap-1">
+				<Label
+					htmlFor={id}
+					{...labelProps}
+					className={cn('text-[--caption-text-color]', labelProps.className)}
+				/>
+				{inputProps.required && (
+					<span className="text-danger-500" aria-hidden="true">
+						*
+					</span>
+				)}
+			</div>
 			<Input
 				id={id}
 				aria-invalid={errorId ? true : undefined}
@@ -83,7 +95,18 @@ export function OTPField({
 	const errorId = errors?.length ? `${id}-error` : undefined
 	return (
 		<div className={className}>
-			<Label htmlFor={id} {...labelProps} />
+			<div className="flex items-center gap-1">
+				<Label
+					htmlFor={id}
+					{...labelProps}
+					className={cn('text-[--caption-text-color]', labelProps.className)}
+				/>
+				{inputProps.required && (
+					<span className="text-danger-500" aria-hidden="true">
+						*
+					</span>
+				)}
+			</div>
 			<InputOTP
 				pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
 				maxLength={6}
@@ -127,16 +150,29 @@ export function TextareaField({
 	const errorId = errors?.length ? `${id}-error` : undefined
 	return (
 		<div className={className}>
-			<Label htmlFor={id} {...labelProps} />
+			<div className="flex items-center gap-1">
+				<Label
+					htmlFor={id}
+					{...labelProps}
+					className={cn('text-[--caption-text-color]', labelProps.className)}
+				/>
+				{textareaProps.required && (
+					<span className="text-danger-500" aria-hidden="true">
+						*
+					</span>
+				)}
+			</div>
 			<Textarea
 				id={id}
 				aria-invalid={errorId ? true : undefined}
 				aria-describedby={errorId}
 				{...textareaProps}
 			/>
-			<div className="min-h-[32px] px-4 pb-3 pt-1">
-				{errorId ? <ErrorList id={errorId} errors={errors} /> : null}
-			</div>
+			{errorId ? (
+				<div className="min-h-[32px] px-4 pb-3 pt-1">
+					<ErrorList id={errorId} errors={errors} />
+				</div>
+			) : null}
 		</div>
 	)
 }

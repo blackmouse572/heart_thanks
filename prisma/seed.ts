@@ -6,6 +6,7 @@ import {
 	createUser,
 	getNoteImages,
 	getRamdomReceiver,
+	getRandomReviewer,
 	getUserImages,
 	img,
 } from '#tests/db-utils.ts'
@@ -64,7 +65,6 @@ async function seed() {
 
 	const totalUsers = 5
 	console.time(`👤 Created ${totalUsers} users...`)
-	const noteImages = await getNoteImages()
 	const userImages = await getUserImages()
 	const users: { id: string }[] = []
 	for (let index = 0; index < totalUsers; index++) {
@@ -77,7 +77,7 @@ async function seed() {
 					password: { create: createPassword(userData.username) },
 					image: { create: userImages[index % userImages.length] },
 					roles: { connect: { name: 'user' } },
-					points: 30,
+					balance: 30,
 				},
 			})
 			.catch((e) => {
@@ -149,6 +149,9 @@ async function seed() {
 	users.forEach(async (user) => {
 		for (let index = 0; index < totalTransactionsPerUser; index++) {
 			const randomReceiver = await getRamdomReceiver(users, user)
+			const randomReviewed = Math.random() >= 0.5
+			const randomReviewedAt = randomReviewed ? new Date() : null
+			const randomReviewer = await getRandomReviewer(users, user)
 			await prisma.transactions.create({
 				data: {
 					amount: 10,
@@ -158,6 +161,11 @@ async function seed() {
 					updatedAt: new Date(),
 					owner: { connect: { id: user.id } },
 					receiver: { connect: { id: randomReceiver.id } },
+					reviewedAt: randomReviewedAt,
+					reviewBy: randomReviewer
+						? { connect: { id: randomReviewer.id } }
+						: undefined,
+					reviewed: randomReviewed,
 				},
 			})
 		}

@@ -113,6 +113,20 @@ export async function getRamdomReceiver(
 
 	return randomReceiver
 }
+export async function getRandomReviewer(
+	users: { id: string }[],
+	self: { id: string },
+) {
+	const reviewer = users.filter((user) => user.id !== self.id)
+	let randomReviewer: { id: string } | undefined
+	while (!randomReviewer) {
+		const randomNumber = Math.floor(Math.random() * reviewer.length)
+		randomReviewer = reviewer[randomNumber]
+	}
+
+	return randomReviewer
+}
+
 export async function img({
 	altText,
 	filepath,

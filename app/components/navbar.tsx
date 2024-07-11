@@ -5,6 +5,9 @@ import { useEffect, useState } from 'react'
 import { SearchBar } from './search-bar'
 import Button from './ui/button'
 import { Icon } from './ui/icon'
+import DropdownMenu from './ui/dropdown'
+import { User } from '@prisma/client'
+import Avatar from './ui/avatar'
 
 type NavbarItem = {
 	title: string
@@ -68,8 +71,8 @@ export function SiteHeader() {
 	return (
 		<>
 			<header
+				id={'header-nav'}
 				data-state={isOpen ? 'open' : 'closed'}
-				data-shade="glassy"
 				className="group card-shadow fixed inset-x-2 top-2 z-10 rounded border bg-white/50 dark:border-white/5 dark:bg-white/5 lg:relative lg:inset-x-0 lg:top-4 lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none lg:dark:bg-transparent"
 				style={{
 					backdropFilter: 'blur(20px)',
@@ -175,22 +178,23 @@ export function SiteHeader() {
 						</nav>
 					</div>
 
-					<div className="hidden gap-2 lg:flex">
+					<div className="">
 						{user ? (
-							<Form action="/logout" method="POST" className="mt-3">
-								<Button.Root
-									type="submit"
-									variant="outlined"
-									intent="danger"
-									size="md"
-								>
-									<Button.Icon type="leading">
-										<Icon name="exit" />
-									</Button.Icon>
-									<Button.Label>Logout</Button.Label>
-								</Button.Root>
-							</Form>
+							<LoggedSideItem user={user as any} />
 						) : (
+							// <Form action="/logout" method="POST" className="mt-3">
+							// 	<Button.Root
+							// 		type="submit"
+							// 		variant="outlined"
+							// 		intent="danger"
+							// 		size="md"
+							// 	>
+							// 		<Button.Icon type="leading">
+							// 			<Icon name="exit" />
+							// 		</Button.Icon>
+							// 		<Button.Label>Logout</Button.Label>
+							// 	</Button.Root>
+							// </Form>
 							<Button.Root
 								href="/login"
 								size="xs"
@@ -213,6 +217,59 @@ export function SiteHeader() {
 				/>
 			)}
 		</>
+	)
+}
+
+type LoggedSideItemProps = {
+	user: User
+}
+
+const LoggedSideItem = ({ user }: LoggedSideItemProps) => {
+	return (
+		<DropdownMenu.Root>
+			<DropdownMenu.Trigger>
+				<Button.Root
+					size="sm"
+					intent="secondary"
+					className="flex items-center gap-1"
+				>
+					<Button.Label>{user.vault ?? 0} 💖</Button.Label>
+				</Button.Root>
+			</DropdownMenu.Trigger>
+			<DropdownMenu.Portal>
+				<DropdownMenu.Content sideOffset={20}>
+					<DropdownMenu.Group>
+						<Link to="/settings/profile">
+							<DropdownMenu.Item>
+								<DropdownMenu.Icon>
+									<Icon name="avatar" />
+								</DropdownMenu.Icon>
+								Profile
+							</DropdownMenu.Item>
+						</Link>
+						<Link to="/settings/profile/password">
+							<DropdownMenu.Item>
+								<DropdownMenu.Icon>
+									<Icon name="lock-open-1" />
+								</DropdownMenu.Icon>
+								Change password
+							</DropdownMenu.Item>
+						</Link>
+					</DropdownMenu.Group>
+					<DropdownMenu.Separator />
+					<DropdownMenu.Group>
+						<Link to="/logout">
+							<DropdownMenu.Item intent="danger">
+								<DropdownMenu.Icon>
+									<Icon name="arrow-left" />
+								</DropdownMenu.Icon>
+								Logout
+							</DropdownMenu.Item>
+						</Link>
+					</DropdownMenu.Group>
+				</DropdownMenu.Content>
+			</DropdownMenu.Portal>
+		</DropdownMenu.Root>
 	)
 }
 

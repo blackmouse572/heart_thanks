@@ -15,13 +15,14 @@ import {
 } from 'recharts'
 import { AspectRatio } from '@radix-ui/react-aspect-ratio'
 import { Skeleton } from '#app/components/ui/skeleton.js'
+import { User } from '@prisma/client'
 type MostPointsUser = {
 	name: string
-	points: number
+	valut: number
 }[]
 
 type MostPointsUserChartProps = {
-	mostPointsUser: MostPointsUser
+	mostPointsUser: User[]
 	isLoading?: boolean
 }
 function MostPointUserChart({
@@ -89,7 +90,7 @@ function MostPointUserChart({
 								})}
 								radius={8}
 								fill="currentColor"
-								dataKey={'points'}
+								dataKey={'vault'}
 							>
 								<LabelList
 									className="text-white"
@@ -105,7 +106,7 @@ function MostPointUserChart({
 									position="right"
 									fill="currentColor"
 									stroke="none"
-									dataKey="points"
+									dataKey="vault"
 								/>
 							</Bar>
 						</BarChart>

@@ -1,9 +1,7 @@
 import {
 	FieldMetadata,
-	getFieldsetProps,
 	getFormProps,
 	getInputProps,
-	useField,
 	useForm,
 	useInputControl,
 } from '@conform-to/react'
@@ -21,7 +19,7 @@ import {
 } from '@remix-run/react'
 import React, { useCallback, useEffect } from 'react'
 import { z } from 'zod'
-import { Field } from '#app/components/forms.tsx'
+import { Field, TextareaField } from '#app/components/forms.tsx'
 import Button from '#app/components/ui/button.js'
 import { Caption } from '#app/components/ui/typography/caption.js'
 import { Card } from '#app/components/ui/card.tsx'
@@ -85,7 +83,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: LoaderFunctionArgs) {
 	const userId = await requireUserId(request)
 	const formData = await request.formData()
-	let receiver: User, sender: User
+	let receiver: User, sender: User, reviewer: User
 	let amount: number
 	checkHoneypot(formData)
 	const submission = await parseWithZod(formData, {
@@ -93,13 +91,16 @@ export async function action({ request }: LoaderFunctionArgs) {
 			TransferSchema.transform(async (data, ctx) => {
 				if (intent !== null) return { ...data, session: null }
 
-				const [senderUser, receiverUser] = await Promise.all([
+				const [senderUser, receiverUser, reviewerUser] = await Promise.all([
 					prisma.user.findUnique({ where: { id: userId } }),
 					prisma.user.findUnique({
 						where: { id: data.recipientId },
 					}),
+					prisma.user.findUnique({
+						where: { id: data.reviewerId },
+					}),
 				])
-				if (!senderUser || !receiverUser) {
+				if (!senderUser || !receiverUser || !reviewerUser) {
 					ctx.addIssue({
 						code: z.ZodIssueCode.custom,
 						message: 'Invalid user',
@@ -111,15 +112,35 @@ export async function action({ request }: LoaderFunctionArgs) {
 				sender = senderUser
 				receiver = receiverUser
 				amount = data.amount
+				reviewer = reviewerUser
 
-				if (senderUser?.points < data.amount) {
+				if (senderUser?.balance < data.amount) {
 					ctx.addIssue({
 						code: z.ZodIssueCode.too_big,
-						maximum: senderUser.points,
+						maximum: senderUser.balance,
 						inclusive: true,
 						type: 'number',
 						path: ['amount'],
 						message: 'Insufficient points',
+					})
+					return z.NEVER
+				}
+
+				if (senderUser.id === receiverUser.id) {
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						message: 'Cannot transfer to yourself',
+					})
+					return z.NEVER
+				}
+
+				if (
+					reviewerUser.id === senderUser.id ||
+					reviewerUser.id === receiverUser.id
+				) {
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						message: 'Reviewer cannot be sender or receiver',
 					})
 					return z.NEVER
 				}
@@ -138,7 +159,10 @@ export async function action({ request }: LoaderFunctionArgs) {
 		await transferHandler({
 			sender: sender!,
 			receiver: receiver!,
+			reviewer: reviewer!,
 			amount: amount!,
+			title: submission.value.title,
+			description: submission.value.description,
 		})
 		return redirectWithToast('/transfer', {
 			title: 'Transfer Successful',
@@ -171,7 +195,7 @@ function TransferPage() {
 		shouldRevalidate: 'onBlur',
 	})
 	return (
-		<div className="container mb-48 mt-36 flex flex-col items-center justify-center gap-6">
+		<div className="mb-48 mt-5 flex flex-col items-center justify-center gap-6">
 			<Card variant="outlined">
 				<div className="space-y-4">
 					<div className="space-y-2">
@@ -188,16 +212,15 @@ function TransferPage() {
 				<div className="mt-6 grid gap-6 divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0">
 					<div className="">
 						<Caption as="span">Your balance</Caption>
-						<div className="mt-2 flex items-center justify-between gap-3">
-							<Display as="span">{user?.points}️</Display>
-							<div className="flex items-center gap-1.5 [--body-text-color:theme(colors.success.600)] dark:[--body-text-color:theme(colors.success.400)]"></div>
+						<div className="mt-2 flex flex-col items-start justify-between gap-3">
+							<Display as="span">{user?.balance}️</Display>
 						</div>
 					</div>
-					<div className="w-full pt-6 sm:pl-6 sm:pt-0">
+					<div className="w-full pt-3 sm:pl-6 sm:pt-0">
 						<Caption as="span">New Customers</Caption>
 						<Form action="/transfer" method="post" {...getFormProps(form)}>
 							<HoneypotInputs />
-							<fieldset disabled={isSubmitting} className="space-y-8">
+							<fieldset disabled={isSubmitting} className="mt-3 space-y-4">
 								<Field
 									labelProps={{
 										htmlFor: fields.title.id,
@@ -208,22 +231,22 @@ function TransferPage() {
 											type: 'text',
 										}),
 										autoComplete: 'title',
-										className: 'lowercase',
+										placeholder: 'Reason for transfer...',
 										required: true,
 									}}
-									errors={fields.amount.errors}
+									errors={fields.title.errors}
 								/>
-								<Field
+								<TextareaField
 									labelProps={{
 										htmlFor: fields.description.id,
 										children: 'Description',
 									}}
-									inputProps={{
+									textareaProps={{
 										...getInputProps(fields.description, { type: 'text' }),
 										autoComplete: 'description',
-										className: 'lowercase',
+										placeholder: 'This amount is for...',
 									}}
-									errors={fields.amount.errors}
+									errors={fields.description.errors}
 								/>
 								<Field
 									labelProps={{
@@ -233,8 +256,8 @@ function TransferPage() {
 									inputProps={{
 										...getInputProps(fields.amount, { type: 'number' }),
 										autoComplete: 'amount',
-										className: 'lowercase',
-										max: user?.points,
+										placeholder: 'Amount to transfer...',
+										max: user?.balance,
 										min: 1,
 									}}
 									errors={fields.amount.errors}
@@ -250,6 +273,12 @@ function TransferPage() {
 														labelProps={{ htmlFor: fields.recipientId.id }}
 														users={users as any}
 													/>
+													<UserSelector
+														field={fields.reviewerId}
+														label={'Reviewer'}
+														labelProps={{ htmlFor: fields.reviewerId.id }}
+														users={users as any}
+													/>
 												</>
 											)
 										}}
@@ -260,9 +289,12 @@ function TransferPage() {
 									type="submit"
 									variant="solid"
 									intent="primary"
-									className="flex-end"
+									className="ml-auto"
 								>
 									<Button.Label>Transfer</Button.Label>
+									<Button.Icon type="trailing">
+										<Icon name="arrow-right" />
+									</Button.Icon>
 								</Button.Root>
 							</fieldset>
 						</Form>
@@ -292,9 +324,16 @@ type UserSelectorProps = {
 	users: (User & { image: { id: string } })[]
 	field: FieldMetadata
 	label: string
+	required?: boolean
 	labelProps?: React.LabelHTMLAttributes<HTMLLabelElement>
 }
-function UserSelector({ field, users, label, labelProps }: UserSelectorProps) {
+function UserSelector({
+	field,
+	users,
+	label,
+	required,
+	labelProps,
+}: Readonly<UserSelectorProps>) {
 	const [open, setOpen] = React.useState(false)
 	const [value, setValue] = React.useState(users[0]?.id ?? '')
 	const [searchParams, setSearchParams] = useSearchParams()
@@ -305,30 +344,56 @@ function UserSelector({ field, users, label, labelProps }: UserSelectorProps) {
 	useEffect(() => {
 		// sync
 		control.change(value)
+		const newSearchParams = new URLSearchParams(searchParams)
+		const fieldId = field.id
+		newSearchParams.set(fieldId, users.find((u) => u.id === value)!.username)
+		setSearchParams(newSearchParams)
 	}, [])
 
 	useEffect(() => {
-		const to = searchParams.get('to')
+		const fieldId = field.id
+		const to = searchParams.get(fieldId)
 		if (!to) return
 		const user = users.find((u) => u.username === to)
 		if (user) {
 			setValue(user.id)
 		}
-	}, [searchParams])
+	}, [searchParams, users])
 
-	const onChange = useCallback((newValue: string) => {
-		const [id] = newValue.split('|')
-		const fallback = id ?? users[0]!.id
-		setValue(fallback)
-		setOpen(false)
-		control.change(fallback)
-	}, [])
+	const onChange = useCallback(
+		(newValue: string) => {
+			const [id] = newValue.split('|')
+			const fallback = id ?? users[0]!.id
+			setValue(fallback)
+			setOpen(false)
+			const newSearchParams = new URLSearchParams(searchParams)
+			const fieldId = field.id
+			newSearchParams.set(
+				fieldId,
+				users.find((u) => u.id === fallback)!.username,
+			)
+			setSearchParams(newSearchParams)
+			control.change(fallback)
+		},
+		[searchParams, field.id, users],
+	)
 
 	return (
 		<Popover.Root open={open} onOpenChange={setOpen}>
 			<Popover.Trigger asChild>
 				<div>
 					<Label {...labelProps}>{label}</Label>
+					<div className="flex items-center gap-1">
+						<Label
+							{...labelProps}
+							className={cn('text-[--caption-text-color]')}
+						/>
+						{required && (
+							<span className="text-danger-500" aria-hidden="true">
+								*
+							</span>
+						)}
+					</div>
 					<Button.Root
 						size="lg"
 						aria-expanded={open}

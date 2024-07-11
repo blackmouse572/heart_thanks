@@ -87,16 +87,16 @@ export async function loader({ request }: ActionFunctionArgs) {
 	const averagePoints = prisma.user
 		.aggregate({
 			_avg: {
-				points: true,
+				vault: true,
 			},
 		})
-		.then((value) => value._avg.points ?? 0)
+		.then((value) => value._avg.vault ?? 0)
 
 	const mostPointsUser = prisma.user
 		.findMany({
 			take: 5,
 			orderBy: {
-				points: 'desc',
+				// vault: 'desc',
 			},
 		})
 		.then((user) => user)
