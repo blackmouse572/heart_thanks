@@ -22,7 +22,7 @@ const TableHeader = React.forwardRef<
 	<thead
 		ref={ref}
 		className={cn(
-			'w-full text-[--title-text-color] *:bg-[--ui-soft-bg] *:p-3 *:text-left *:font-medium',
+			'w-full text-[--title-text-color] *:bg-[--ui-soft-bg] *:p-3 *:text-left *:font-medium [&_tr]:border-b-0 [&_tr]:hover:bg-[--ui-soft-bg]',
 			className,
 		)}
 		{...props}

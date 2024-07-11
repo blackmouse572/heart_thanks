@@ -130,6 +130,7 @@ export async function action({ request }: LoaderFunctionArgs) {
 					ctx.addIssue({
 						code: z.ZodIssueCode.custom,
 						message: 'Cannot transfer to yourself',
+						path: ['recipientId'],
 					})
 					return z.NEVER
 				}
@@ -140,6 +141,7 @@ export async function action({ request }: LoaderFunctionArgs) {
 				) {
 					ctx.addIssue({
 						code: z.ZodIssueCode.custom,
+						path: ['reviewerId'],
 						message: 'Reviewer cannot be sender or receiver',
 					})
 					return z.NEVER

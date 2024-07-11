@@ -4,6 +4,7 @@ import {
 } from '@tailus/themer'
 import { useEffect, useRef, useState } from 'react'
 import Tabs from './ui/tabs'
+import { useSearchParams } from '@remix-run/react'
 
 type TabsAppProps = 'all' | 'unread' | 'archived'
 
@@ -23,10 +24,20 @@ type TabsData = {
 }
 type TabSectionsProps = {
 	data: TabsData[]
+	defaultValue?: TabsAppProps
+	defaultKey?: string
 }
-export const TabSections = ({ data }: TabSectionsProps) => {
+export const TabSections = ({ data, defaultKey }: TabSectionsProps) => {
 	const [state, setState] = useState(data[0]?.trigger.value)
 	const spanRef = useRef<HTMLSpanElement>(null)
+	const [search, setSearch] = useSearchParams()
+
+	const onTabChange = (value: string) => {
+		setState(value)
+		const newSearch = new URLSearchParams(search)
+		newSearch.set('tab', value)
+		setSearch(newSearch)
+	}
 
 	useEffect(() => {
 		if (!spanRef.current) return
@@ -41,8 +52,8 @@ export const TabSections = ({ data }: TabSectionsProps) => {
 	return (
 		<Tabs.Root
 			className="space-y-4"
-			defaultValue={state}
-			onValueChange={(value) => setState(value)}
+			defaultValue={defaultKey}
+			onValueChange={onTabChange}
 		>
 			<Tabs.List size="md">
 				{data.map((tab) => (

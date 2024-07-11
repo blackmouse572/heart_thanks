@@ -1,13 +1,14 @@
 import { cn } from '#app/utils/misc.js'
-import { useOptionalUser, useUser } from '#app/utils/user.js'
-import { Form, Link, useLocation, useMatches } from '@remix-run/react'
+import { useOptionalUser } from '#app/utils/user.js'
+import { Form, Link, useLocation } from '@remix-run/react'
 import { useEffect, useState } from 'react'
-import { SearchBar } from './search-bar'
 import Button from './ui/button'
 import { Icon } from './ui/icon'
 import DropdownMenu from './ui/dropdown'
-import { User } from '@prisma/client'
-import Avatar from './ui/avatar'
+import { Role } from '@prisma/client'
+import UserAvatar from './user-avatar'
+import Badge from './ui/badge'
+import { Caption, Title } from './ui/typography'
 
 type NavbarItem = {
 	title: string
@@ -221,23 +222,74 @@ export function SiteHeader() {
 }
 
 type LoggedSideItemProps = {
-	user: User
+	user: any
 }
 
 const LoggedSideItem = ({ user }: LoggedSideItemProps) => {
 	return (
 		<DropdownMenu.Root>
-			<DropdownMenu.Trigger>
+			<DropdownMenu.Trigger asChild>
 				<Button.Root
 					size="sm"
 					intent="secondary"
-					className="flex items-center gap-1"
+					variant="outlined"
+					className="flex h-fit items-center justify-end gap-1"
 				>
-					<Button.Label>{user.vault ?? 0} 💖</Button.Label>
+					<UserAvatar
+						rtl
+						imageId={user.image.id}
+						title={user.name}
+						description={user.vault ?? 0 + '💖'}
+					/>
 				</Button.Root>
 			</DropdownMenu.Trigger>
 			<DropdownMenu.Portal>
-				<DropdownMenu.Content sideOffset={20}>
+				<DropdownMenu.Content sideOffset={15} fancy>
+					<div className="grid place-items-start gap-3 p-3 [grid-template-columns:auto_1fr]">
+						<UserAvatar imageId={user.image.id} />
+						<div>
+							<Title className="text-sm" as="span" weight="medium">
+								{user.name ?? user.username}
+							</Title>
+							<Caption className="flex flex-wrap gap-2">
+								{user.username}
+								<Badge size="xs">
+									{user.roles.find((a: Role) => a.name === 'admin')
+										? 'Admin'
+										: 'User'}
+								</Badge>
+							</Caption>
+
+							<div className="mt-4 grid grid-cols-2 gap-3" data-rounded="large">
+								<Button.Root
+									className="bg-gray-50"
+									variant="outlined"
+									href="/settings/profile?tab=Setting"
+									size="xs"
+									intent="gray"
+								>
+									<Button.Icon size="xs" type="leading">
+										<Icon name="settings" />
+									</Button.Icon>
+									<Button.Label>Manage</Button.Label>
+								</Button.Root>
+								<Form action="/logout" method="POST">
+									<Button.Root
+										type="submit"
+										variant="outlined"
+										size="xs"
+										intent="danger"
+									>
+										<Button.Icon type="leading">
+											<Icon name="logout" size="xs" />
+										</Button.Icon>
+										<Button.Label>Logout</Button.Label>
+									</Button.Root>
+								</Form>
+							</div>
+						</div>
+					</div>
+					<DropdownMenu.Separator />
 					<DropdownMenu.Group>
 						<Link to="/settings/profile">
 							<DropdownMenu.Item>
@@ -258,12 +310,28 @@ const LoggedSideItem = ({ user }: LoggedSideItemProps) => {
 					</DropdownMenu.Group>
 					<DropdownMenu.Separator />
 					<DropdownMenu.Group>
-						<Link to="/logout">
-							<DropdownMenu.Item intent="danger">
+						<Link to="/docs/help">
+							<DropdownMenu.Item>
 								<DropdownMenu.Icon>
-									<Icon name="arrow-left" />
+									<Icon name="question-mark-circled" />
 								</DropdownMenu.Icon>
-								Logout
+								Help
+							</DropdownMenu.Item>
+						</Link>
+						<Link to="/docs/report-bug">
+							<DropdownMenu.Item>
+								<DropdownMenu.Icon>
+									<Icon name="bug" />
+								</DropdownMenu.Icon>
+								Report a bug
+							</DropdownMenu.Item>
+						</Link>
+						<Link to="/docs/feedback">
+							<DropdownMenu.Item>
+								<DropdownMenu.Icon>
+									<Icon name="file-text" />
+								</DropdownMenu.Icon>
+								Feedback
 							</DropdownMenu.Item>
 						</Link>
 					</DropdownMenu.Group>

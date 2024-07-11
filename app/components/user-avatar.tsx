@@ -9,6 +9,7 @@ type UserAvatarProps = {
 	imageId?: string
 	title?: string
 	description?: string
+	rtl?: boolean
 	href?: string
 } & AvatarRootProps
 function UserAvatar({
@@ -17,24 +18,38 @@ function UserAvatar({
 	size,
 	title,
 	description,
+	rtl,
 	...props
 }: UserAvatarProps) {
 	const Container = href ? Link : 'div'
 	return (
-		<Container to={href || ''} className="flex items-center gap-2">
+		<Container to={href ?? ''} className="flex items-center gap-2">
+			{rtl && title && (
+				<div>
+					<Text
+						weight={'medium'}
+						size={size === '2xl' ? 'lg' : size === 'xl' ? 'base' : 'sm'}
+					>
+						{title}
+					</Text>
+					<Caption size="xs">{description}</Caption>
+				</div>
+			)}
 			<Avatar.Root size={size} {...props}>
 				<Avatar.Image src={getUserImgSrc(imageId)} alt={title} />
 				<Avatar.Fallback>{title}</Avatar.Fallback>
 			</Avatar.Root>
-			<div>
-				<Text
-					weight={'medium'}
-					size={size === '2xl' ? 'lg' : size === 'xl' ? 'base' : 'sm'}
-				>
-					{title}
-				</Text>
-				<Caption>{description}</Caption>
-			</div>
+			{!rtl && title && (
+				<div>
+					<Text
+						weight={'medium'}
+						size={size === '2xl' ? 'lg' : size === 'xl' ? 'base' : 'sm'}
+					>
+						{title}
+					</Text>
+					<Caption>{description}</Caption>
+				</div>
+			)}
 		</Container>
 	)
 }

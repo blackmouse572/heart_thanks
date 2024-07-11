@@ -46,7 +46,7 @@ function SettingPage() {
 							return (
 								<Link.Root
 									key={setting.id}
-									link={`/admin/settings?p=${setting.id}`}
+									to={`/admin/settings?p=${setting.id}`}
 									isActive={isActive}
 									intent={isActive ? 'secondary' : 'gray'}
 									variant={isActive ? 'outlined' : 'ghost'}

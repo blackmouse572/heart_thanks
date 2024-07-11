@@ -216,7 +216,7 @@ function AdminPage() {
 							<NavLink to="/admin/settings">setting</NavLink>
 						</Caption>
 						<div className="mt-5 grid grid-cols-2">
-							<Link.Root link="/admin/users" intent="primary">
+							<Link.Root to="/admin/users" intent="primary">
 								<Link.Icon>
 									<Icon name="avatar" />
 								</Link.Icon>
@@ -224,7 +224,7 @@ function AdminPage() {
 									<Text>User Manager</Text>
 								</Link.Label>
 							</Link.Root>
-							<Link.Root link="/admin/transactions" intent="secondary">
+							<Link.Root to="/admin/transactions" intent="secondary">
 								<Link.Icon>
 									<Icon name="transfer" />
 								</Link.Icon>
@@ -232,7 +232,7 @@ function AdminPage() {
 									<Text>Transactions History</Text>
 								</Link.Label>
 							</Link.Root>
-							<Link.Root link="/admin/settings" intent="danger">
+							<Link.Root to="/admin/settings" intent="danger">
 								<Link.Icon>
 									<Icon name="chevron-up-right" />
 								</Link.Icon>

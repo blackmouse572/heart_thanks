@@ -7,7 +7,7 @@ import {
 	type LoaderFunctionArgs,
 	type ActionFunctionArgs,
 } from '@remix-run/node'
-import { useFetcher, useLoaderData } from '@remix-run/react'
+import { useFetcher, useLoaderData, useSearchParams } from '@remix-run/react'
 import { z } from 'zod'
 import { ErrorList, Field } from '#app/components/forms.tsx'
 import Button from '#app/components/ui/button'
@@ -28,6 +28,7 @@ import { TabSections } from '#app/components/tab-sections.js'
 import UserAvatar from '#app/components/user-avatar.js'
 import Banner from '#app/components/ui/banner.js'
 import { Text } from '#app/components/ui/typography/text.js'
+import { useMemo } from 'react'
 
 export const handle: SEOHandle = {
 	getSitemapEntries: () => null,
@@ -111,128 +112,138 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function EditUserProfile() {
 	const data = useLoaderData<typeof loader>()
 
+	const [search] = useSearchParams()
+
+	const tabData = useMemo(
+		() => [
+			{
+				trigger: {
+					id: 'Profile',
+					value: 'Profile',
+				},
+				content: {
+					value: 'Profile',
+					render: (
+						<div className="w-full space-y-4">
+							<div className="item-center flex justify-between">
+								<UserAvatar
+									imageId={data.user.image?.id}
+									title={data.user.username}
+								/>
+								<Button.Root
+									// preventScrollReset
+									href="photo"
+									aria-label="Change profile photo"
+									variant="ghost"
+								>
+									<Button.Icon type="only">
+										<Icon name="camera" className="h-4 w-4" />
+									</Button.Icon>
+								</Button.Root>
+							</div>
+							<UpdateProfile />
+						</div>
+					),
+				},
+			},
+			{
+				trigger: {
+					id: 'Setting',
+					value: 'Setting',
+				},
+				content: {
+					value: 'Setting',
+					render: (
+						<div className="w-full">
+							<ScrollArea.Root className="w-full">
+								<ScrollArea.Viewport className="w-full">
+									<div className="col-span-full flex flex-col gap-6">
+										<div>
+											<Link.Root to="change-email">
+												<Link.Icon>
+													<Icon name="envelope-closed">
+														Change email from {data.user.email}
+													</Icon>
+												</Link.Icon>
+											</Link.Root>
+										</div>
+										<div>
+											<Link.Root to="two-factor">
+												{data.isTwoFactorEnabled ? (
+													<>
+														<Link.Icon>
+															<Icon name="lock-closed" />
+														</Link.Icon>
+														<Link.Label>2FA is enabled</Link.Label>
+													</>
+												) : (
+													<>
+														<Link.Icon>
+															<Icon name="lock-open-1" />
+														</Link.Icon>
+														<Link.Label>Enable 2FA</Link.Label>
+													</>
+												)}
+											</Link.Root>
+										</div>
+										<div>
+											<Link.Root
+												to={data.hasPassword ? 'password' : 'password/create'}
+											>
+												<Link.Icon>
+													<Icon name="dots-horizontal" />
+												</Link.Icon>
+												<Link.Label>
+													{data.hasPassword
+														? 'Change Password'
+														: 'Create a Password'}
+												</Link.Label>
+											</Link.Root>
+										</div>
+										<div>
+											<Link.Root to="connections">
+												<Link.Icon>
+													<Icon name="link-2" />
+												</Link.Icon>
+												<Link.Label>Manage connections</Link.Label>
+											</Link.Root>
+										</div>
+										<SignOutOfSessions />
+										<DeleteData />
+									</div>
+								</ScrollArea.Viewport>
+							</ScrollArea.Root>
+						</div>
+					),
+				},
+			},
+			{
+				trigger: {
+					id: 'off',
+					value: 'off',
+				},
+				content: {
+					value: 'off',
+					render: <div className="w-full">Setting</div>,
+				},
+			},
+		],
+		[],
+	)
+
+	const defaultTab = useMemo(() => {
+		const tab = search.get('tab')
+		if (tab) {
+			const tabValue =
+				tabData.find((tabData) => tabData.trigger.value === tab) ?? tabData[0]
+			return tabValue!.trigger.value
+		}
+		return tabData[0]!.trigger.value
+	}, [search])
 	return (
 		<div>
 			<Card>
-				<TabSections
-					data={[
-						{
-							trigger: {
-								id: 'Profile',
-								value: 'Profile',
-							},
-							content: {
-								value: 'Profile',
-								render: (
-									<div className="w-full space-y-4">
-										<div className="item-center flex justify-between">
-											<UserAvatar
-												imageId={data.user.image?.id}
-												title={data.user.username}
-											/>
-											<Button.Root
-												// preventScrollReset
-												href="photo"
-												aria-label="Change profile photo"
-												variant="ghost"
-											>
-												<Button.Icon type="only">
-													<Icon name="camera" className="h-4 w-4" />
-												</Button.Icon>
-											</Button.Root>
-										</div>
-										<UpdateProfile />
-									</div>
-								),
-							},
-						},
-						{
-							trigger: {
-								id: 'Setting',
-								value: 'Setting',
-							},
-							content: {
-								value: 'Setting',
-								render: (
-									<div className="w-full">
-										<ScrollArea.Root className="w-full">
-											<ScrollArea.Viewport className="w-full">
-												<div className="col-span-full flex flex-col gap-6">
-													<div>
-														<Link.Root link="change-email">
-															<Link.Icon>
-																<Icon name="envelope-closed">
-																	Change email from {data.user.email}
-																</Icon>
-															</Link.Icon>
-														</Link.Root>
-													</div>
-													<div>
-														<Link.Root link="two-factor">
-															{data.isTwoFactorEnabled ? (
-																<>
-																	<Link.Icon>
-																		<Icon name="lock-closed" />
-																	</Link.Icon>
-																	<Link.Label>2FA is enabled</Link.Label>
-																</>
-															) : (
-																<>
-																	<Link.Icon>
-																		<Icon name="lock-open-1" />
-																	</Link.Icon>
-																	<Link.Label>Enable 2FA</Link.Label>
-																</>
-															)}
-														</Link.Root>
-													</div>
-													<div>
-														<Link.Root
-															link={
-																data.hasPassword
-																	? 'password'
-																	: 'password/create'
-															}
-														>
-															<Link.Icon>
-																<Icon name="dots-horizontal" />
-															</Link.Icon>
-															<Link.Label>
-																{data.hasPassword
-																	? 'Change Password'
-																	: 'Create a Password'}
-															</Link.Label>
-														</Link.Root>
-													</div>
-													<div>
-														<Link.Root link="connections">
-															<Link.Icon>
-																<Icon name="link-2" />
-															</Link.Icon>
-															<Link.Label>Manage connections</Link.Label>
-														</Link.Root>
-													</div>
-													<SignOutOfSessions />
-													<DeleteData />
-												</div>
-											</ScrollArea.Viewport>
-										</ScrollArea.Root>
-									</div>
-								),
-							},
-						},
-						{
-							trigger: {
-								id: 'off',
-								value: 'off',
-							},
-							content: {
-								value: 'off',
-								render: <div className="w-full">Setting</div>,
-							},
-						},
-					]}
-				/>
+				<TabSections defaultKey={defaultTab} data={tabData} />
 			</Card>
 		</div>
 	)

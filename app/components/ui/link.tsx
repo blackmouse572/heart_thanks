@@ -4,7 +4,7 @@ import Button, { ButtonProps } from './button'
 
 export const Root = ({
 	isActive = false,
-	link,
+	to: link,
 	intent,
 	children,
 	...props
@@ -13,7 +13,7 @@ export const Root = ({
 	children: ReactNode
 	intent?: ButtonProps['intent']
 	variant?: ButtonProps['variant']
-	link: string
+	to: string
 }) => (
 	<Button.Root
 		href={link}
@@ -39,3 +39,9 @@ export const Icon = ({ children }: { children: ReactNode }) => (
 export const Label = ({ children }: { children: ReactNode }) => (
 	<Button.Label className="text-sm">{children}</Button.Label>
 )
+
+export default {
+	Root,
+	Icon,
+	Label,
+}
