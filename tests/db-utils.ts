@@ -31,7 +31,7 @@ export function createUser() {
 	}
 }
 
-export function createPassword(password: string = faker.internet.password()) {
+export function createPassword(password: string = '123456@@Avepoint') {
 	return {
 		hash: bcrypt.hashSync(password, 10),
 	}
@@ -89,16 +89,9 @@ export async function getNoteImages() {
 }
 
 let userImages: Array<Awaited<ReturnType<typeof img>>> | undefined
-export async function getUserImages() {
-	if (userImages) return userImages
-
-	userImages = await Promise.all(
-		Array.from({ length: 10 }, (_, index) =>
-			img({ filepath: `./tests/fixtures/images/user/${index}.jpg` }),
-		),
-	)
-
-	return userImages
+export async function getUserImages(username: string) {
+	const path = username.replace('.', '-')
+	return await img({ filepath: `./tests/fixtures/images/user/${path}.png` })
 }
 export async function getRamdomReceiver(
 	users: { id: string }[],

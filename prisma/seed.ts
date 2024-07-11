@@ -12,6 +12,7 @@ import {
 } from '#tests/db-utils.ts'
 import { insertGitHubUser } from '#tests/mocks/github.ts'
 import { User } from '@prisma/client'
+import seedUsers from '#tests/fixtures/users.json'
 import { promiseHash } from 'remix-utils/promise'
 
 async function seed() {
@@ -23,7 +24,7 @@ async function seed() {
 	console.timeEnd('🧹 Cleaned up the database...')
 
 	console.time('🔑 Created permissions...')
-	const entities = ['user', 'note']
+	const entities = ['user', 'transaction', 'setting', 'permission']
 	const actions = ['create', 'read', 'update', 'delete']
 	const accesses = ['own', 'any'] as const
 
@@ -63,21 +64,26 @@ async function seed() {
 	})
 	console.timeEnd('👑 Created roles...')
 
-	const totalUsers = 5
+	const totalUsers = seedUsers.length
 	console.time(`👤 Created ${totalUsers} users...`)
-	const userImages = await getUserImages()
 	const users: { id: string }[] = []
 	for (let index = 0; index < totalUsers; index++) {
-		const userData = createUser()
+		const userData = seedUsers[index] as {
+			email: string
+			username: string
+			name: string
+		}
+		const userImage = await getUserImages(userData.username)
 		const createdUser = await prisma.user
 			.create({
 				select: { id: true },
 				data: {
 					...userData,
 					password: { create: createPassword(userData.username) },
-					image: { create: userImages[index % userImages.length] },
+					image: { create: userImage },
 					roles: { connect: { name: 'user' } },
 					balance: 30,
+					vault: 0,
 				},
 			})
 			.catch((e) => {
@@ -94,7 +100,9 @@ async function seed() {
 	console.time(`🐨 Created admin user "jaden.nguyen"`)
 
 	const kodyImages = await promiseHash({
-		kodyUser: img({ filepath: './tests/fixtures/images/user/kody.png' }),
+		kodyUser: img({
+			filepath: './tests/fixtures/images/user/jaden-nguyen.png',
+		}),
 		cuteKoala: img({
 			altText: 'an adorable koala cartoon illustration',
 			filepath: './tests/fixtures/images/kody-notes/cute-koala.png',
