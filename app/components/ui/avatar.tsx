@@ -7,6 +7,7 @@ import {
 	type AvatarRootProps,
 	type AvatarFallbackProps,
 } from '@tailus/themer'
+import { cn } from '#app/utils/misc.js'
 
 const AvatarRoot = React.forwardRef<
 	React.ElementRef<typeof AvatarPrimitive.Root>,
@@ -48,7 +49,10 @@ const AvatarFallback = React.forwardRef<
 		<AvatarPrimitive.Fallback
 			{...props}
 			ref={ref}
-			className={fallback[variant]({ intent, className })}
+			className={fallback[variant]({
+				intent,
+				className: cn('text-center text-xs', className),
+			})}
 		/>
 	)
 })

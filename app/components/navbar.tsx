@@ -233,7 +233,7 @@ const LoggedSideItem = ({ user }: LoggedSideItemProps) => {
 					size="sm"
 					intent="secondary"
 					variant="outlined"
-					className="flex h-fit items-center justify-end gap-1"
+					className="flex h-fit items-center justify-end gap-1 py-1.5"
 				>
 					<UserAvatar
 						rtl

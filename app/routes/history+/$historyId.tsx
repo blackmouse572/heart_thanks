@@ -127,7 +127,7 @@ export async function action({ request }: ActionFunctionArgs) {
 		const isOwner = note.ownerId === userId
 		await requireUserWithPermission(
 			request,
-			isOwner ? `delete:note:own` : `delete:note:any`,
+			isOwner ? `delete:transaction:own` : `delete:transaction:any`,
 		)
 
 		await prisma.transactions.delete({ where: { id: note.id } })

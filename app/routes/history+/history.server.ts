@@ -13,6 +13,19 @@ export function getUserTransaction(
 			content: true,
 			createdAt: true,
 			amount: true,
+			reviewBy: {
+				select: {
+					username: true,
+					name: true,
+					image: {
+						select: {
+							id: true,
+						},
+					},
+				},
+			},
+			reviewed: true,
+			reviewedAt: true,
 			owner: {
 				select: {
 					username: true,

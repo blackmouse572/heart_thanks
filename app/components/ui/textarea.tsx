@@ -1,24 +1,37 @@
-import * as React from 'react'
+import React from 'react'
+import { twMerge } from 'tailwind-merge'
+import { form, type InputProps } from '@tailus/themer'
 
-import { cn } from '#app/utils/misc.tsx'
+export interface TextAreaProps
+	extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'size'>,
+		InputProps {}
 
-export interface TextareaProps
-	extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
+export const Textarea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
+	(
+		{ className, variant = 'mixed', fancy = false, size = 'md', ...props },
+		forwardedRef,
+	) => {
+		const { input, textarea } = form()
 
-const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-	({ className, ...props }, ref) => {
+		if ((variant === 'bottomOutlined' || variant === 'plain') && fancy) {
+			throw Error(
+				'Fancy is not supported with the bottomOutlined or plain variant !',
+			)
+		}
+
 		return (
 			<textarea
-				className={cn(
-					'flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid]:border-input-invalid',
-					className,
-				)}
-				ref={ref}
+				ref={forwardedRef as React.RefObject<HTMLTextAreaElement>}
+				className={input({
+					variant,
+					fancy,
+					size,
+					class: twMerge(textarea(), className),
+				})}
 				{...props}
 			/>
 		)
 	},
 )
-Textarea.displayName = 'Textarea'
 
-export { Textarea }
+export default Textarea

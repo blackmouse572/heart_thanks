@@ -108,6 +108,17 @@ export async function loader({ request }: ActionFunctionArgs) {
 				createdAt: 'desc',
 			},
 			include: {
+				reviewBy: {
+					select: {
+						username: true,
+						name: true,
+						image: {
+							select: {
+								id: true,
+							},
+						},
+					},
+				},
 				owner: {
 					select: {
 						username: true,

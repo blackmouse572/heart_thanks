@@ -82,7 +82,10 @@ export default function ProfileRoute() {
 								</Button.Root>
 							</>
 						) : (
-							<Link to={`/transfer?to=${user.username}`} prefetch="intent">
+							<Link
+								to={`/transfer?transfer-form-recipientId=${user.username}`}
+								prefetch="intent"
+							>
 								<Button.Root>
 									<Button.Label>Send 💖 {userDisplayName}</Button.Label>
 								</Button.Root>

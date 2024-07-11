@@ -19,6 +19,7 @@
 		--caption-text-color: theme(colors.gray.500);
 		--body-text-color: theme(colors.gray.300);
 		--placeholder-text-color: theme(colors.gray.600);
+		--ui-soft-bg: theme(colors.gray.700);
 		--ui-bg: theme(colors.gray.800);
 		--ui-border-color: theme(colors.gray.700);
 		--input-bg: theme(colors.gray.700);

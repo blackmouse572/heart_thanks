@@ -1,5 +1,5 @@
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
-import { useLoaderData } from '@remix-run/react'
+import { Link, useLoaderData } from '@remix-run/react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { toast } from 'sonner'
 import Checkbox from '#app/components/checkbox'
@@ -17,6 +17,7 @@ import {
 import { requireUserId } from '#app/utils/auth.server.js'
 import { getMetadata, parseSort } from '#app/utils/request.server.js'
 import FilterItem from './filter'
+import Badge from '#app/components/ui/badge.js'
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const userId = await requireUserId(request)
@@ -60,6 +61,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		],
 	}
 	const user = await getUserTransaction(metadata, where, sortObj)
+	console.log({ user: user[0]?.reviewBy })
 	const totals = await getUserTransactionCount(where, sortObj)
 	const [minV, maxV] = await Promise.all([
 		getMinTransactionAmount(userId),
@@ -112,7 +114,9 @@ const columnsDef: ColumnDef<LoaderDataUser>[] = [
 		cell: (cell) => {
 			const id = cell.getValue() as string
 			return (
-				<Caption className="max-w-12 overflow-hidden truncate">{id}</Caption>
+				<Link to={`/history/${id}`}>
+					<Caption className="max-w-12 overflow-hidden truncate">{id}</Caption>
+				</Link>
 			)
 		},
 	},
@@ -149,6 +153,22 @@ const columnsDef: ColumnDef<LoaderDataUser>[] = [
 		},
 	},
 	{
+		accessorKey: 'reviewBy',
+		enableSorting: false,
+		header: 'Review By',
+		cell: (cell) => {
+			const user = cell.getValue() as LoaderDataUser['owner']
+			return (
+				<UserAvatar
+					imageId={user.image?.id}
+					href={`/users/${user.username}`}
+					title={user.name ?? user.username}
+					description={user.username}
+				/>
+			)
+		},
+	},
+	{
 		accessorKey: 'amount',
 		header: 'Amount',
 		enableSorting: true,
@@ -160,6 +180,24 @@ const columnsDef: ColumnDef<LoaderDataUser>[] = [
 			)
 		},
 	},
+	{
+		accessorKey: 'reviewedAt',
+		header: 'Reviewed At',
+		enableSorting: true,
+		cell: (cell) => {
+			const isReviewed = cell.row.original.reviewed
+			const date = cell.getValue() as string
+			const localeDate = new Date(date).toLocaleDateString()
+			return isReviewed ? (
+				<Caption className="overflow-hidden truncate">{localeDate}</Caption>
+			) : (
+				<Badge size="sm" variant="outlined" intent="gray">
+					Not Reviewed
+				</Badge>
+			)
+		},
+	},
+
 	{
 		accessorKey: 'createdAt',
 		header: 'Transfer At',
