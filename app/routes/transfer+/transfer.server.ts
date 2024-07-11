@@ -1,5 +1,6 @@
-import { type User } from '@prisma/client'
 import { prisma } from '#app/utils/db.server.js'
+import { type User } from '@prisma/client'
+import { json } from '@remix-run/react'
 
 type CommonTransferHandlerProps = {
 	receiver: User
@@ -64,10 +65,14 @@ export async function transferHandler({
 type ConfirmTransferHandlerProps = {
 	currentUser: User
 	transactionId: string
+	options?: {
+		changeToCurentUser: boolean
+	}
 }
 export async function confirmTransferHandler({
 	currentUser,
 	transactionId,
+	options,
 }: ConfirmTransferHandlerProps) {
 	const transaction = await prisma.transactions.findUnique({
 		where: { id: transactionId },
@@ -75,14 +80,27 @@ export async function confirmTransferHandler({
 	})
 
 	if (!transaction) {
-		throw new Error('Transaction not found')
+		return json(
+			{
+				error: 'Not found',
+				message: `Transaction not found`,
+			},
+			{ status: 404 },
+		)
 	}
 
 	const { owner, receiver, reviewBy, amount } = transaction
 
-	if (currentUser.id !== reviewBy?.id) {
-		throw new Error('You are not the reviewer of this transaction')
-	}
+	// This already checked on action handler
+	// if (currentUser.id !== reviewBy?.id) {
+	// 	return json(
+	// 		{
+	// 			error: 'Unauthorized',
+	// 			message: `You are not authorized to review this transaction`
+	// 		},
+	// 		{ status: 401 },
+	// 	)
+	// }
 
 	const [_, __, transactionUpdated] = await prisma.$transaction([
 		prisma.user.update({
@@ -101,6 +119,9 @@ export async function confirmTransferHandler({
 				amount,
 				reviewed: true,
 				reviewedAt: new Date(),
+				reviewBy: options?.changeToCurentUser
+					? { connect: { id: currentUser.id } }
+					: undefined,
 			},
 		}),
 	])

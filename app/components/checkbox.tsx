@@ -1,5 +1,5 @@
-import { type CheckboxProps } from './ui/checkbox.tsx'
 import UICheckbox from './ui/checkbox'
+import { type CheckboxProps } from './ui/checkbox.tsx'
 import { Icon } from './ui/icon'
 
 type CustomCheckboxProps = CheckboxProps & {

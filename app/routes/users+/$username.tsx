@@ -3,9 +3,9 @@ import { Spacer } from '#app/components/spacer.tsx'
 
 import Button from '#app/components/ui/button.js'
 import Card from '#app/components/ui/card.js'
+import { List } from '#app/components/ui/typography/list.js'
 import UserAvatar from '#app/components/user-avatar.js'
 import { prisma } from '#app/utils/db.server.ts'
-import { getUserImgSrc } from '#app/utils/misc.tsx'
 import { useOptionalUser } from '#app/utils/user.ts'
 import { invariantResponse } from '@epic-web/invariant'
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
@@ -18,6 +18,9 @@ export async function loader({ params }: LoaderFunctionArgs) {
 			name: true,
 			username: true,
 			createdAt: true,
+			balance: true,
+			vault: true,
+			roles: true,
 			image: { select: { id: true } },
 		},
 		where: {
@@ -52,9 +55,20 @@ export default function ProfileRoute() {
 				</div>
 
 				<Spacer size="sm" />
+				<List type="none" inside>
+					<li>
+						<b>Username:</b> {user.username}
+					</li>
+					<li>
+						<b>Balance:</b> {user.balance} 💖
+					</li>
+					<li>
+						<b>Vault:</b> {user.vault} 💖
+					</li>
+				</List>
 
-				<div className="flex flex-col items-center">
-					<div className="flex flex-wrap items-center justify-center gap-4">
+				<div className="flex flex-col items-center justify-start">
+					<div className="flex flex-wrap items-center justify-start gap-4">
 						<h1 className="text-h2 text-center">{userDisplayName}</h1>
 					</div>
 					<p className="text-muted-foreground mt-2 text-center">
