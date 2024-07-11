@@ -197,8 +197,8 @@ function TransferPage() {
 		shouldRevalidate: 'onBlur',
 	})
 	return (
-		<div className="mb-48 mt-5 flex flex-col items-center justify-center gap-6">
-			<Card variant="outlined">
+		<div className="container mb-48 mt-5 flex flex-col items-center justify-center gap-6">
+			<Card variant="outlined" className="w-full">
 				<div className="space-y-4">
 					<div className="space-y-2">
 						<Title as="h2" size="lg" weight="medium" className="mb-1">
@@ -211,15 +211,23 @@ function TransferPage() {
 					<ErrorAlert actionData={actionData} />
 				</div>
 
-				<div className="mt-6 grid gap-6 divide-y sm:grid-cols-2 sm:divide-x sm:divide-y-0">
-					<div className="">
-						<Caption as="span">Your balance</Caption>
-						<div className="mt-2 flex flex-col items-start justify-between gap-3">
-							<Display as="span">{user?.balance}️</Display>
+				<div className="mt-6 grid gap-6 divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+					<div className="space-y-8">
+						<div className="flex flex-col items-start justify-between gap-3">
+							<Caption as="span">Your balance</Caption>
+							<Display as="span" className="text-primary-500">
+								{user?.balance}️
+							</Display>
+						</div>
+						<div className="flex flex-col items-start justify-between gap-3">
+							<Caption as="span">Your points</Caption>
+							<Display as="span" className="text-secondary-500">
+								{user?.vault}️
+							</Display>
 						</div>
 					</div>
-					<div className="w-full pt-3 sm:pl-6 sm:pt-0">
-						<Caption as="span">New Customers</Caption>
+					<div className="col-span-2 w-full pt-3 sm:pl-6 sm:pt-0">
+						<Caption as="span">New Transfer</Caption>
 						<Form action="/transfer" method="post" {...getFormProps(form)}>
 							<HoneypotInputs />
 							<fieldset disabled={isSubmitting} className="mt-3 space-y-4">
@@ -374,7 +382,7 @@ function UserSelector({
 				fieldId,
 				users.find((u) => u.id === fallback)!.username,
 			)
-			setSearchParams(newSearchParams)
+			setSearchParams(newSearchParams, { preventScrollReset: true })
 			control.change(fallback)
 		},
 		[searchParams, field.id, users],

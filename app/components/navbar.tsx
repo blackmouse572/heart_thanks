@@ -86,9 +86,13 @@ export function SiteHeader() {
 								<Icon name="envelope-closed" />
 							</Link>
 							<div className="flex gap-2 lg:hidden">
-								<Button.Root href="login" size="sm" intent="neutral">
-									<Button.Label>Login</Button.Label>
-								</Button.Root>
+								{user ? (
+									<LoggedSideItem user={user} />
+								) : (
+									<Button.Root href="login" size="sm" intent="neutral">
+										<Button.Label>Login</Button.Label>
+									</Button.Root>
+								)}
 
 								<Button.Root
 									onClick={() => setIsOpen(!isOpen)}
@@ -179,7 +183,7 @@ export function SiteHeader() {
 						</nav>
 					</div>
 
-					<div className="">
+					<div className="hidden lg:block">
 						{user ? (
 							<LoggedSideItem user={user as any} />
 						) : (
@@ -202,6 +206,7 @@ export function SiteHeader() {
 								intent="gray"
 								variant="outlined"
 							>
+								kfd
 								<Button.Label>Login</Button.Label>
 							</Button.Root>
 						)}

@@ -44,6 +44,10 @@ import Badge from '#app/components/ui/badge.js'
 import HoverCard from '#app/components/ui/hover-card.js'
 import { Link as Links } from '#app/components/ui/typography/link'
 import { Code } from '#app/components/ui/typography/code.js'
+import { useCopyToClipboard } from '#app/utils/hooks/useCopy.js'
+import { useCallback, useEffect, useState } from 'react'
+import { useToast } from '#app/components/toaster.js'
+import { toast } from 'sonner'
 
 export async function loader({ params }: LoaderFunctionArgs) {
 	const select = {
@@ -149,6 +153,22 @@ export default function NoteRoute() {
 	console.log(user)
 	const isAdmin = userHasRole(user as any, 'admin')
 	const displayBar = canReview || isOwner
+	const [isCopied, setIsCopied] = useState(false)
+	const [_, copy] = useCopyToClipboard()
+
+	const copyId = useCallback(() => {
+		if (isCopied) {
+			return
+		}
+		copy(data.note.id)
+		setIsCopied(true)
+
+		setTimeout(() => {
+			setIsCopied(false)
+		}, 3000)
+
+		toast.success('Copied to clipboard')
+	}, [])
 
 	return (
 		<div className="container mt-5">
@@ -156,7 +176,19 @@ export default function NoteRoute() {
 				<Card variant="outlined" className="col-span-3 w-full cursor-default">
 					<header className="flex justify-between">
 						<div>
-							<Text size={'sm'}>Transaction {note.id}</Text>
+							<Text size={'sm'} className="flex items-center gap-2">
+								Transaction {note.id}
+								<Button.Root
+									intent={isCopied ? 'success' : 'gray'}
+									variant="ghost"
+									onClick={copyId}
+									size="xs"
+								>
+									<Button.Icon type="only">
+										<Icon name={isCopied ? 'clipboard-check' : 'clipboard'} />
+									</Button.Icon>
+								</Button.Root>
+							</Text>
 							<Title>{note.title}</Title>
 							<Caption>{note.content}</Caption>
 						</div>
@@ -170,12 +202,17 @@ export default function NoteRoute() {
 							imageId={note.owner.image?.id}
 							title={note.owner.name || note.owner.username}
 						/>
-						<div className="">
+						<div className="relative">
 							<SeparatorRoot
 								dashed
 								orientation="vertical"
 								className="h-9 border-success-500 pl-4"
 							/>
+							<span className="absolute left-10 top-1/2 -translate-y-1/2">
+								<Caption size="xs">
+									{formatDistanceToNow(new Date(note.createdAt))}
+								</Caption>
+							</span>
 							<span className="-mt-4 pl-2 text-success-500">
 								<Icon name="chevron-down" className="" />
 							</span>
@@ -212,9 +249,15 @@ export default function NoteRoute() {
 							</Text>
 							<SeparatorRoot dashed />
 							<Caption className="text-nowrap">
-								{note.reviewedAt
-									? formatDistanceToNow(new Date(note.reviewedAt))
-									: 'Not yet'}
+								{!note.reviewedAt ? (
+									<Caption>Not yet</Caption>
+								) : (
+									new Date(note.reviewedAt).toLocaleDateString('en-US', {
+										month: 'long',
+										day: 'numeric',
+										year: 'numeric',
+									})
+								)}
 							</Caption>
 						</li>
 						<li className="flex items-center justify-between gap-4">
@@ -247,9 +290,11 @@ export default function NoteRoute() {
 							</Text>
 							<SeparatorRoot dashed />
 							<Caption className="text-nowrap">
-								{note.createdAt
-									? formatDistanceToNow(new Date(note.createdAt))
-									: 'Not yet'}
+								{new Date(note.createdAt).toLocaleDateString('en-US', {
+									month: 'long',
+									day: 'numeric',
+									year: 'numeric',
+								})}
 							</Caption>
 						</li>
 					</List>
