@@ -1,4 +1,4 @@
-import { Field, TextareaField } from '#app/components/forms.tsx'
+import { ErrorList, Field, TextareaField } from '#app/components/forms.tsx'
 import Banner from '#app/components/ui/banner.js'
 import Button from '#app/components/ui/button.js'
 import { Card } from '#app/components/ui/card.tsx'
@@ -387,7 +387,7 @@ function UserSelector({
 		},
 		[searchParams, field.id, users],
 	)
-
+	const errorId = field.allErrors ? `${field.id}-error` : undefined
 	return (
 		<Popover.Root open={open} onOpenChange={setOpen}>
 			<div>
@@ -435,6 +435,11 @@ function UserSelector({
 						</Button.Icon>
 					</Button.Root>
 				</Popover.Trigger>
+				{errorId && (
+					<div className="min-h-[32px] pb-3 pt-1 text-danger-500">
+						<ErrorList id={errorId} errors={field.errors} />
+					</div>
+				)}
 			</div>
 			<Popover.Portal>
 				<Popover.Content className="w-[300px] p-0" fancy>
