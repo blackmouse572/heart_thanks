@@ -61,7 +61,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		],
 	}
 	const user = await getUserTransaction(metadata, where, sortObj)
-	console.log({ user: user[0]?.reviewBy })
 	const totals = await getUserTransactionCount(where, sortObj)
 	const [minV, maxV] = await Promise.all([
 		getMinTransactionAmount(userId),

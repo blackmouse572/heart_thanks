@@ -206,7 +206,6 @@ export function SiteHeader() {
 								intent="gray"
 								variant="outlined"
 							>
-								kfd
 								<Button.Label>Login</Button.Label>
 							</Button.Root>
 						)}

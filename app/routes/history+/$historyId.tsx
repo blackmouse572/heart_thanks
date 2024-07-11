@@ -150,7 +150,6 @@ export default function NoteRoute() {
 	const user = useUser()
 	const isOwner = user?.id === data.note.ownerId
 	const canReview = user?.id === data.note.reviewBy?.id
-	console.log(user)
 	const isAdmin = userHasRole(user as any, 'admin')
 	const displayBar = canReview || isOwner
 	const [isCopied, setIsCopied] = useState(false)
