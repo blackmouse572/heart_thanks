@@ -9,12 +9,27 @@ import { useDebounce, useIsPending } from '#app/utils/misc.js'
 import { Metadata } from '#app/utils/request.server.js'
 import { Form, useLocation, useSearchParams, useSubmit } from '@remix-run/react'
 import React, { useId } from 'react'
+import Select from '#app/components/ui/select.js'
 type FilterItemProps = {
 	metadata: Metadata & {
 		min: number
 		max: number
 	}
 }
+const reviewedOptions = [
+	{
+		label: 'Yes',
+		value: 'true',
+	},
+	{
+		label: 'No',
+		value: 'false',
+	},
+	{
+		label: 'All',
+		value: 'all',
+	},
+]
 function FilterItem({ metadata }: FilterItemProps) {
 	const { filter } = metadata
 	const id = useId()
@@ -131,6 +146,40 @@ function FilterItem({ metadata }: FilterItemProps) {
 								<Slider.Thumb />
 								<Slider.Thumb />
 							</Slider.Root>
+						</div>
+
+						{/* Select need review */}
+
+						<div className="flex-1 space-y-1">
+							<Label htmlFor={'needReview'}>Need review</Label>
+
+							<Select.Root
+								name="needReview"
+								defaultValue={
+									searchParams.get('reviewed') ?? reviewedOptions[2]?.value
+								}
+							>
+								<Select.Trigger size="md" className="" name="reviewed">
+									<Select.Value placeholder="Role" />
+								</Select.Trigger>
+
+								<Select.Portal>
+									<Select.Content mixed className="z-50">
+										<Select.Viewport>
+											{reviewedOptions.map((option) => (
+												<Select.Item
+													key={option.value}
+													value={option.value}
+													className="items-center pl-7"
+												>
+													<Select.ItemText>{option.label}</Select.ItemText>
+													<Select.ItemIndicator />
+												</Select.Item>
+											))}
+										</Select.Viewport>
+									</Select.Content>
+								</Select.Portal>
+							</Select.Root>
 						</div>
 
 						<Button.Root

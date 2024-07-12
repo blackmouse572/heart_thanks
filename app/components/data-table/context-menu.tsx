@@ -49,9 +49,7 @@ export function RenderContenxtMenu<T>({
 					{action.icon}
 					{action.label}
 					{action.command && (
-						<>
-							<ContextMenu.Command>{action.command}</ContextMenu.Command>
-						</>
+						<ContextMenu.Command>{action.command}</ContextMenu.Command>
 					)}
 				</ContextMenu.Item>
 			)
@@ -75,7 +73,7 @@ export function RenderContenxtMenu<T>({
 					{...menuProps}
 				>
 					{actions.map((group, i) => (
-						<ContextMenu.Group>
+						<ContextMenu.Group key={group.toString()}>
 							{group.map((action, j) => renderItem(action))}
 						</ContextMenu.Group>
 					))}

@@ -3,12 +3,15 @@ import { Spacer } from '#app/components/spacer.tsx'
 
 import Button from '#app/components/ui/button.js'
 import Card from '#app/components/ui/card.js'
+import { Icon } from '#app/components/ui/icon.js'
 import { List } from '#app/components/ui/typography/list.js'
 import UserAvatar from '#app/components/user-avatar.js'
 import { prisma } from '#app/utils/db.server.ts'
 import { useOptionalUser } from '#app/utils/user.ts'
 import { invariantResponse } from '@epic-web/invariant'
 import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import { type ActionFunctionArgs } from '@remix-run/node'
+import { redirectWithToast } from '#app/utils/toast.server.js'
 import { Form, Link, useLoaderData, type MetaFunction } from '@remix-run/react'
 
 export async function loader({ params }: LoaderFunctionArgs) {
@@ -33,6 +36,15 @@ export async function loader({ params }: LoaderFunctionArgs) {
 	return json({ user, userJoinedDisplay: user.createdAt.toLocaleDateString() })
 }
 
+export async function action({ request, params }: ActionFunctionArgs) {
+	const formData = await request.formData()
+	const user = JSON.parse(formData.get('user') as string) as any
+	return redirectWithToast(`/users/${params.username}`, {
+		description: `You have poke ${user.name ?? user.username}!`,
+		title: `Poked ${user.name}`,
+	})
+}
+
 export default function ProfileRoute() {
 	const data = useLoaderData<typeof loader>()
 	const user = data.user
@@ -45,13 +57,22 @@ export default function ProfileRoute() {
 			<Spacer size="4xs" />
 
 			<Card className="container flex-col items-center rounded-3xl p-12">
-				<div className="relative">
+				<div className="item-start relative flex justify-between">
 					<UserAvatar
 						title={userDisplayName}
 						description={user.username}
 						imageId={user.image?.id}
 						size="2xl"
 					/>
+					<Form method="POST">
+						<input hidden name="user" value={JSON.stringify(user)} />
+						<Button.Root type="submit" variant="outlined">
+							<Button.Label>Poke</Button.Label>
+							<Button.Icon type="trailing">
+								<Icon name="arrow-right" />
+							</Button.Icon>
+						</Button.Root>
+					</Form>
 				</div>
 
 				<Spacer size="sm" />

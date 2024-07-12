@@ -20,13 +20,16 @@ import { Link, useLoaderData } from '@remix-run/react'
 import { type ColumnDef } from '@tanstack/react-table'
 import { toast } from 'sonner'
 import FilterItem from './filter'
+import { Prisma } from '@prisma/client'
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	const userId = await requireUserId(request)
 	const metadata = getMetadata(request)
-	const { search, min, max, sort } = metadata
+	const { search, min, max, sort, needReview: _needReview } = metadata
+	const needReviewBool = _needReview === 'false'
+	const needReview = _needReview === 'all' ? undefined : _needReview
 	const sortObj = parseSort(sort)
-	const where = {
+	const where: Prisma.TransactionsWhereInput = {
 		AND: [
 			{
 				OR: [
@@ -35,6 +38,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 					},
 					{
 						receiverId: userId,
+					},
+					{
+						reviewedById: userId,
 					},
 				],
 			},
@@ -60,8 +66,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 						},
 					}
 				: {},
+			needReview
+				? {
+						reviewed: !needReviewBool,
+					}
+				: {},
 		],
 	}
+	console.log({ where: { ...where } })
 	const user = await getUserTransaction(metadata, where, sortObj)
 	const totals = await getUserTransactionCount(where, sortObj)
 	const [minV, maxV] = await Promise.all([
@@ -249,7 +261,11 @@ function HistoryPage() {
 					],
 				]}
 				getRowId={(row) => row.id}
-				filter={<FilterItem metadata={metadata as any} />}
+				filter={
+					<>
+						<FilterItem metadata={metadata as any} />
+					</>
+				}
 			/>
 			<hr />
 		</div>

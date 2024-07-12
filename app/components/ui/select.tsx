@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import * as SelectPrimitive from '@radix-ui/react-select'
 
 import {
@@ -110,12 +110,9 @@ const SelectContent = React.forwardRef<
 		}
 
 		const { content } = select[variant]()
-		const value = useMemo(
-			() => ({ variant, fancy, mixed, intent }),
-			[variant, fancy, mixed, intent],
-		)
+
 		return (
-			<SelectContext.Provider value={value}>
+			<SelectContext.Provider value={{ variant, fancy, mixed, intent }}>
 				<SelectPrimitive.Content
 					{...props}
 					ref={forwardedRef}
@@ -145,9 +142,9 @@ const SelectItem = React.forwardRef<
 >(({ className, variant, children, ...props }, forwardedRef) => {
 	const { variant: contextVariant, intent } = React.useContext(SelectContext)
 
-	const defaultVariant = contextVariant ?? 'solid'
+	variant = contextVariant || 'solid'
 
-	const { item } = select[defaultVariant]()
+	const { item } = select[variant]()
 
 	return (
 		<SelectPrimitive.Item
