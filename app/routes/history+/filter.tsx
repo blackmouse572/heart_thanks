@@ -65,7 +65,6 @@ function FilterItem({ metadata }: FilterItemProps) {
 	const [searchParams] = useSearchParams()
 	const location = useLocation()
 	const submit = useSubmit()
-	const isSubmitting = useIsPending()
 	const [range, setRange] = React.useState(() =>
 		filter.min ? [filter.min, filter.max] : [metadata.min, metadata.max],
 	)

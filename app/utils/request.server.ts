@@ -1,5 +1,3 @@
-import { Params } from '@remix-run/react'
-
 export type Metadata = {
 	skip: number
 	take: number
@@ -19,7 +17,7 @@ export function getMetadata(request: Request): Metadata {
 
 	const skip = Number(searchParams.get('skip')) || initialMetadata.skip
 	const take = Number(searchParams.get('take')) || initialMetadata.take
-	const search = searchParams.get('search') || initialMetadata.search
+	const search = searchParams.get('search') ?? initialMetadata.search
 	const others = Object.fromEntries(searchParams.entries())
 
 	return {

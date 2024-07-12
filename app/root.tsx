@@ -49,6 +49,7 @@ import { getToast } from './utils/toast.server.ts'
 import { useUser } from './utils/user.ts'
 import sonnerStyles from '#app/components/ui/sonner.css?url'
 import { Caption } from './components/ui/typography/caption.tsx'
+import vaulStyles from '#app/components/ui/vaul.css?url'
 
 export const links: LinksFunction = () => {
 	return [
@@ -69,6 +70,7 @@ export const links: LinksFunction = () => {
 		{ rel: 'icon', type: 'image/svg+xml', href: '/favicons/favicon.svg' },
 		{ rel: 'stylesheet', href: tailwindStyleSheetUrl },
 		{ rel: 'stylesheet', href: sonnerStyles },
+		{ rel: 'stylesheet', href: vaulStyles },
 	].filter(Boolean)
 }
 

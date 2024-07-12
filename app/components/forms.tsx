@@ -1,8 +1,8 @@
 import Checkbox, { CheckboxProps } from '#app/components/ui/checkbox'
 import Label from '#app/components/ui/typography/label.js'
-import { useInputControl } from '@conform-to/react'
+import { useField, useInputControl } from '@conform-to/react'
 import { REGEXP_ONLY_DIGITS_AND_CHARS, type OTPInputProps } from 'input-otp'
-import React, { useId } from 'react'
+import React, { useCallback, useId } from 'react'
 import {
 	InputOTP,
 	InputOTPGroup,
@@ -13,6 +13,12 @@ import Input, { type InputProps } from './ui/input.tsx'
 import { Textarea } from './ui/textarea.tsx'
 import { Icon } from './ui/icon.tsx'
 import { cn } from '#app/utils/misc.js'
+import Tooltip from './tooltip.tsx'
+import Button from './ui/button.tsx'
+import { Caption } from './ui/typography/caption.tsx'
+import { Link } from './ui/typography/link.tsx'
+import { useCopyToClipboard } from '#app/utils/hooks/useCopy.js'
+import { toast } from 'sonner'
 
 export type ListOfErrors = Array<string | null | undefined> | null | undefined
 
@@ -36,23 +42,40 @@ export function ErrorList({
 	)
 }
 
+type FieldProps = {
+	labelProps: React.LabelHTMLAttributes<HTMLLabelElement>
+	inputProps: InputProps
+	errors?: ListOfErrors
+	className?: string
+	explain?: string
+}
+
 export function Field({
 	labelProps,
 	inputProps,
 	errors,
 	className,
-}: {
-	labelProps: React.LabelHTMLAttributes<HTMLLabelElement>
-	inputProps: InputProps
-	errors?: ListOfErrors
-	className?: string
-}) {
+	explain,
+}: FieldProps) {
 	const fallbackId = useId()
 	const id = inputProps.id ?? fallbackId
 	const errorId = errors?.length ? `${id}-error` : undefined
 	return (
 		<div className={className}>
 			<div className="flex items-center gap-1">
+				{explain && (
+					<Tooltip
+						contentProps={{
+							className: 'max-w-sm',
+							fancy: true,
+							inverted: false,
+						}}
+						content={explain}
+					>
+						<Icon name="info-circle" className="text-[--caption-text-color]" />
+					</Tooltip>
+				)}
+
 				<Label
 					htmlFor={id}
 					{...labelProps}
@@ -74,6 +97,95 @@ export function Field({
 				<div className="min-h-[32px] pb-3 pt-1 text-danger-500">
 					<ErrorList id={errorId} errors={errors} />
 				</div>
+			)}
+		</div>
+	)
+}
+export function PasswordGenereteField({
+	labelProps,
+	inputProps,
+	errors,
+	className,
+	explain,
+}: FieldProps) {
+	const fallbackId = useId()
+	const id = inputProps.id ?? fallbackId
+	const errorId = errors?.length ? `${id}-error` : undefined
+	const control = useInputControl({
+		formId: inputProps.form!,
+		name: inputProps.name!,
+		key: inputProps.id,
+	})
+	const [value, copy] = useCopyToClipboard()
+	const generatePassword = useCallback(() => {
+		const newPassword = Math.random().toString(36).slice(2)
+		control.change(newPassword)
+		copy(newPassword)
+		toast.success('Password copied to clipboard')
+	}, [control])
+
+	return (
+		<div className={className}>
+			<div className="relative flex items-center gap-1">
+				{explain && (
+					<Tooltip
+						contentProps={{
+							className: 'max-w-sm',
+							fancy: true,
+							inverted: false,
+						}}
+						content={explain}
+					>
+						<Icon name="info-circle" className="text-[--caption-text-color]" />
+					</Tooltip>
+				)}
+
+				<Label
+					htmlFor={id}
+					{...labelProps}
+					className={cn('text-[--caption-text-color]', labelProps.className)}
+				/>
+				{inputProps.required && (
+					<span className="text-danger-500" aria-hidden="true">
+						*
+					</span>
+				)}
+			</div>
+			<div className="relative">
+				<Input
+					id={id}
+					aria-invalid={errorId ? true : undefined}
+					aria-describedby={errorId}
+					{...inputProps}
+				/>
+				<div className="absolute right-2 top-1/2 -translate-y-1/2">
+					<Tooltip content="Generate password">
+						<Button.Root
+							size="sm"
+							variant="ghost"
+							intent="gray"
+							type="button"
+							onClick={generatePassword}
+						>
+							<Button.Icon type="only">
+								<Icon name="lock-closed" />
+							</Button.Icon>
+						</Button.Root>
+					</Tooltip>
+				</div>
+			</div>
+			{errorId && (
+				<div className="pt-1 text-danger-500">
+					<ErrorList id={errorId} errors={errors} />
+				</div>
+			)}
+			{value && (
+				<Caption>
+					Generated password:{' '}
+					<Link intent="secondary" size="sm">
+						{value}
+					</Link>
+				</Caption>
 			)}
 		</div>
 	)
@@ -237,9 +349,11 @@ export function CheckboxField({
 					className="text-body-xs text-muted-foreground self-center"
 				/>
 			</div>
-			<div className="px-4 pb-3 pt-1">
-				{errorId ? <ErrorList id={errorId} errors={errors} /> : null}
-			</div>
+			{errorId ? (
+				<div className="px-4 pb-3 pt-1">
+					<ErrorList id={errorId} errors={errors} />
+				</div>
+			) : null}
 		</div>
 	)
 }

@@ -13,3 +13,7 @@ export function cloneElement(element: React.ReactElement, classNames: string) {
 		className: twMerge(element.props.className, classNames),
 	})
 }
+
+export function uppercaseFirstLetter(str: string) {
+	return str.charAt(0).toUpperCase() + str.slice(1)
+}

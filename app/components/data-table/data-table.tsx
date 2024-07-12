@@ -129,7 +129,7 @@ export function DataTable<TData, TValue>({
 											key={header.id}
 											onClick={header.column.getToggleSortingHandler()}
 											className={cn(
-												'[&_svg]:inset-0 [&_svg]:right-0 [&_svg]:m-auto',
+												'relative [&_svg]:inset-0 [&_svg]:right-0 [&_svg]:m-auto',
 												{
 													'cursor-pointer': sortable,
 													'': sortable,
