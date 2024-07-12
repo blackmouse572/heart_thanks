@@ -230,7 +230,7 @@ const columns: ColumnDef<LoaderDataUser>[] = [
 	{
 		accessorKey: 'roles',
 		header: 'Roles',
-		enableSorting: true,
+		enableSorting: false,
 		cell: (cell) => {
 			const roles = cell.getValue() as LoaderRole[]
 			const key = cell.row.original.id
