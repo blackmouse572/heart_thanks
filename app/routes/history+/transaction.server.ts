@@ -108,3 +108,12 @@ export function getMaxTransactionAmount(userId?: string) {
 		},
 	})
 }
+
+export function getTotalsRequireReview(userId?: string) {
+	return prisma.transactions.count({
+		where: {
+			reviewed: false,
+			reviewedById: userId,
+		},
+	})
+}

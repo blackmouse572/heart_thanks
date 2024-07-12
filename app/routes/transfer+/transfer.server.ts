@@ -1,4 +1,5 @@
 import { prisma } from '#app/utils/db.server.js'
+import { ENUM_TRANSACTION_STATUS } from '#app/utils/transaction.js'
 import { type User } from '@prisma/client'
 import { json } from '@remix-run/react'
 
@@ -45,21 +46,38 @@ export async function transferHandler({
 	const isValid = validationHandler({ amount, receiver, sender, reviewer })
 
 	if (isValid) {
-		const transaction = await prisma.transactions.create({
-			data: {
-				title,
-				content: description ?? '',
-				receiver: { connect: { id: receiver.id } },
-				amount,
-				owner: { connect: { id: sender.id } },
-				reviewed: false,
-				reviewBy: { connect: { id: reviewer.id } },
-			},
-		})
+		const [transaction] = await prisma.$transaction([
+			// Create new transaction
+			prisma.transactions.create({
+				data: {
+					title,
+					content: description ?? '',
+					receiver: { connect: { id: receiver.id } },
+					status: ENUM_TRANSACTION_STATUS.PENDING,
+					amount,
+					owner: { connect: { id: sender.id } },
+					reviewed: false,
+					reviewBy: { connect: { id: reviewer.id } },
+				},
+			}),
+			// Decrement the balance of the sender
+			prisma.user.update({
+				where: { id: sender.id },
+				data: { balance: { decrement: amount } },
+			}),
+		])
 
 		return transaction
 	}
-	throw new Error('Invalid transfer')
+	return json(
+		{
+			error: 'Invalid',
+			message: 'Invalid transaction',
+		},
+		{
+			status: 500,
+		},
+	)
 }
 
 type ConfirmTransferHandlerProps = {
@@ -102,11 +120,7 @@ export async function confirmTransferHandler({
 	// 	)
 	// }
 
-	const [_, __, transactionUpdated] = await prisma.$transaction([
-		prisma.user.update({
-			where: { id: owner.id },
-			data: { balance: { decrement: amount } },
-		}),
+	const [_, transactionUpdated] = await prisma.$transaction([
 		prisma.user.update({
 			where: { id: receiver.id },
 			data: { vault: { increment: amount } },
@@ -117,11 +131,55 @@ export async function confirmTransferHandler({
 				receiver: { connect: { id: receiver.id } },
 				owner: { connect: { id: owner.id } },
 				amount,
+				status: ENUM_TRANSACTION_STATUS.SUCCESS,
 				reviewed: true,
 				reviewedAt: new Date(),
 				reviewBy: options?.changeToCurentUser
 					? { connect: { id: currentUser.id } }
 					: undefined,
+			},
+		}),
+	])
+
+	return transactionUpdated
+}
+
+export async function cancelTransferHandler({
+	currentUser,
+	transactionId,
+}: ConfirmTransferHandlerProps) {
+	const transaction = await prisma.transactions.findUnique({
+		where: { id: transactionId },
+		include: { owner: true, receiver: true, reviewBy: true },
+	})
+
+	if (!transaction) {
+		return json(
+			{
+				error: 'Not found',
+				message: `Transaction not found`,
+			},
+			{ status: 404 },
+		)
+	}
+
+	const { owner, receiver, reviewBy, amount } = transaction
+
+	const [_, transactionUpdated] = await prisma.$transaction([
+		prisma.user.update({
+			where: { id: owner.id },
+			data: { balance: { increment: amount } },
+		}),
+		prisma.transactions.update({
+			where: { id: transactionId },
+			data: {
+				receiver: { connect: { id: receiver.id } },
+				owner: { connect: { id: owner.id } },
+				status: ENUM_TRANSACTION_STATUS.FAILED,
+				amount,
+				reviewed: true,
+				reviewedAt: new Date(),
+				reviewBy: { connect: { id: currentUser.id } },
 			},
 		}),
 	])

@@ -11,7 +11,7 @@ import {
 	getMaxTransactionAmount,
 	getMinTransactionAmount,
 	getUserTransaction,
-} from '../history+/history.server'
+} from '../history+/transaction.server'
 import { useLoaderData } from '@remix-run/react'
 import DataTable from '#app/components/data-table/data-table.js'
 import { Icon } from '#app/components/ui/icon.js'

@@ -41,6 +41,7 @@ model Transactions {
   reviewedAt   DateTime?
   reviewedById String?
   reviewBy     User?     @relation("reviewer", fields: [reviewedById], references: [id])
+  status       String    @default("PENDING") // pending, approved, rejected
   // images     NoteImage[]
 
   @@index([ownerId])
