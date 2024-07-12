@@ -3,6 +3,7 @@ import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { ErrorList } from '#app/components/forms.tsx'
 import Aligner from '#app/components/ui/aligner.js'
 import Badge from '#app/components/ui/badge.js'
+import Banner from '#app/components/ui/banner.js'
 import Button from '#app/components/ui/button.tsx'
 import Card from '#app/components/ui/card.js'
 import HoverCard from '#app/components/ui/hover-card.js'
@@ -16,13 +17,17 @@ import { Link as Links } from '#app/components/ui/typography/link'
 import { List } from '#app/components/ui/typography/list.js'
 import { Text } from '#app/components/ui/typography/text.js'
 import { Title } from '#app/components/ui/typography/title.js'
+import UserCard from '#app/components/ui/user-hover-card.js'
 import UserAvatar from '#app/components/user-avatar.js'
 import { confirmTransferHandler } from '#app/routes/transfer+/transfer.server.js'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { useCopyToClipboard } from '#app/utils/hooks/useCopy.js'
 import { useIsPending } from '#app/utils/misc.tsx'
-import { requireUserWithRole } from '#app/utils/permissions.server.ts'
+import {
+	requireUserWithPermission,
+	requireUserWithRole,
+} from '#app/utils/permissions.server.ts'
 import { redirectWithToast } from '#app/utils/toast.server.ts'
 import { userHasRole, useUser } from '#app/utils/user.ts'
 import { getFormProps, useForm } from '@conform-to/react'
@@ -40,7 +45,7 @@ import {
 	type MetaFunction,
 } from '@remix-run/react'
 import { formatDistanceToNow } from 'date-fns'
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
@@ -147,7 +152,63 @@ export async function action({ request }: ActionFunctionArgs) {
 			title: 'Success',
 			description: 'Transaction has been reviewed',
 		})
+	} else if (intent === ENUM_FORM_INTENT.MARK_AS_REVIEWED) {
+		const submission = parseWithZod(formData, {
+			schema: AdminMarkAsReviewedSchema,
+		})
+		if (submission.status !== 'success') {
+			return json(
+				{ result: submission.reply() },
+				{ status: submission.status === 'error' ? 400 : 200 },
+			)
+		}
+
+		const { transactionId: noteId } = submission.value
+
+		const note = await prisma.transactions.findFirst({
+			select: {
+				id: true,
+				ownerId: true,
+				owner: { select: { username: true } },
+				reviewBy: { select: { id: true, username: true } },
+			},
+			where: { id: noteId },
+		})
+		invariantResponse(note, 'Not found', { status: 404 })
+
+		const isOwner = note.reviewBy?.id === userId
+		const currentUser = await prisma.user.findUnique({
+			where: { id: userId },
+		})
+
+		invariantResponse(currentUser, 'Unauthorized', { status: 403 })
+
+		await requireUserWithPermission(
+			request,
+			isOwner ? `update:transaction:own` : `update:transaction:any`,
+		)
+
+		await confirmTransferHandler({
+			currentUser,
+			transactionId: noteId,
+		})
+
+		return redirectWithToast(`/history/${note.id}`, {
+			type: 'success',
+			title: 'Success',
+			description: 'Transaction has been reviewed',
+		})
 	}
+
+	return json(
+		{
+			status: 'error',
+			message: 'Invalid intent',
+		},
+		{
+			status: 400,
+		},
+	)
 }
 
 export default function NoteRoute() {
@@ -155,7 +216,7 @@ export default function NoteRoute() {
 	const { note } = data
 	const user = useUser()
 	const isOwner = user?.id === data.note.ownerId
-	const canReview = user?.id === data.note.reviewBy?.id
+	const canReview = user?.id === data.note.reviewBy?.id && !data.note.reviewed
 	const isAdmin = userHasRole(user as any, 'admin')
 	const [isCopied, setIsCopied] = useState(false)
 	const [_, copy] = useCopyToClipboard()
@@ -173,6 +234,86 @@ export default function NoteRoute() {
 
 		toast.success('Copied to clipboard')
 	}, [])
+
+	const renderReviewSection = useMemo(() => {
+		if (note.reviewed)
+			return (
+				<Banner.Root intent="success">
+					<Banner.Content>
+						<Banner.Icon>
+							<Icon
+								name="circle-dashed-check"
+								className="size-5 text-[--body-text-color]"
+							/>
+						</Banner.Icon>
+						<div className="space-y-2">
+							<Title>Transaction reviewed</Title>
+							<Text>
+								This transaction has been reviewed by{' '}
+								<UserCard
+									user={note.reviewBy as any}
+									linkProps={{
+										intent: 'success',
+										variant: 'underlined',
+										href: `/users/${note.reviewBy?.username}`,
+									}}
+								/>{' '}
+								{formatDistanceToNow(new Date(note.reviewedAt!), {
+									includeSeconds: true,
+									addSuffix: true,
+								})}
+							</Text>
+						</div>
+					</Banner.Content>
+				</Banner.Root>
+			)
+		if (isOwner || !canReview) return
+		return (
+			<Card variant="outlined">
+				<Title>Review this transaction</Title>
+				<Caption>
+					This transaction required your review, please confirm the information
+					and mark as reviewed
+				</Caption>
+				<List as="ol" type="none" inside className="mt-4 space-y-3">
+					<li>
+						<Icon
+							name="circle-dashed-check"
+							className="mr-2 text-success-500"
+							size="lg"
+						/>
+						<b>Amount </b> is correct
+					</li>
+					<li>
+						<Icon
+							name="circle-dashed-check"
+							className="mr-2 text-success-500"
+							size="lg"
+						/>
+						<b>Owner</b> is correct
+					</li>
+					<li>
+						<Icon
+							name="circle-dashed-check"
+							className="mr-2 text-success-500"
+							size="lg"
+						/>
+						<b>Receiver</b> is correct
+					</li>
+					<li>
+						<Icon
+							name="circle-dashed-check"
+							className="mr-2 text-success-500"
+							size="lg"
+						/>
+						<b>Reason</b> is correct
+					</li>
+				</List>
+				<SeparatorRoot className="my-4" />
+				<MarkAsReviewed noteId={note.id} />
+			</Card>
+		)
+	}, [canReview, isOwner, note.id, note.reviewBy?.username, note.reviewed])
 
 	return (
 		<div className="container mt-5">
@@ -202,61 +343,7 @@ export default function NoteRoute() {
 							<Caption>This transaction doest no have description</Caption>
 						)}
 					</Card>
-					{note.reviewed ? (
-						<Card>
-							<Title className="text-success-500">
-								<Icon name="check" className="mr-2" />
-								Transaction reviewed
-							</Title>
-							<Caption>
-								This transaction has been reviewed by {note.reviewBy?.username}
-							</Caption>
-						</Card>
-					) : (
-						<Card>
-							<Title>Review this transaction</Title>
-							<Caption>
-								This transaction required your review, please confirm the
-								information and mark as reviewed
-							</Caption>
-							<List as="ol" type="none" inside className="mt-4 space-y-3">
-								<li>
-									<Icon
-										name="circle-dashed-check"
-										className="mr-2 text-success-500"
-										size="lg"
-									/>
-									<b>Amount </b> is correct
-								</li>
-								<li>
-									<Icon
-										name="circle-dashed-check"
-										className="mr-2 text-success-500"
-										size="lg"
-									/>
-									<b>Owner</b> is correct
-								</li>
-								<li>
-									<Icon
-										name="circle-dashed-check"
-										className="mr-2 text-success-500"
-										size="lg"
-									/>
-									<b>Receiver</b> is correct
-								</li>
-								<li>
-									<Icon
-										name="circle-dashed-check"
-										className="mr-2 text-success-500"
-										size="lg"
-									/>
-									<b>Reason</b> is correct
-								</li>
-							</List>
-							<SeparatorRoot className="my-4" />
-							<MarkAsReviewed noteId={note.id} />
-						</Card>
-					)}
+					{renderReviewSection}
 				</div>
 				<Card
 					variant="outlined"
@@ -412,7 +499,7 @@ export function DeleteNote({ id }: { id: string }) {
 	const isPending = useIsPending()
 	const [form] = useForm({
 		id: 'delete-note',
-		lastResult: actionData?.result,
+		// lastResult: actionData?.result,
 	})
 
 	return (

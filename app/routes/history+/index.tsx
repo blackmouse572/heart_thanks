@@ -25,7 +25,7 @@ import { Prisma } from '@prisma/client'
 export async function loader({ request }: LoaderFunctionArgs) {
 	const userId = await requireUserId(request)
 	const metadata = getMetadata(request)
-	const { search, min, max, sort, needReview: _needReview } = metadata
+	const { search, min, max, sort, needReview: _needReview, reviewer } = metadata
 	const needReviewBool = _needReview === 'false'
 	const needReview = _needReview === 'all' ? undefined : _needReview
 	const sortObj = parseSort(sort)
@@ -71,9 +71,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 						reviewed: !needReviewBool,
 					}
 				: {},
+			reviewer
+				? {
+						reviewBy: {
+							username: reviewer,
+						},
+					}
+				: {},
 		],
 	}
-	console.log({ where: { ...where } })
 	const user = await getUserTransaction(metadata, where, sortObj)
 	const totals = await getUserTransactionCount(where, sortObj)
 	const [minV, maxV] = await Promise.all([
@@ -87,12 +93,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		min,
 		max,
 	}
+	metadata.reviewer = reviewer && user[0]?.reviewBy
 
 	return json({
 		user,
 		metadata,
 	})
 }
+
 type LoaderDataUser = Awaited<
 	ReturnType<Awaited<ReturnType<typeof loader>>['json']>
 >['user'][0]

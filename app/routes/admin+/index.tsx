@@ -158,7 +158,10 @@ export async function loader({ request }: ActionFunctionArgs) {
 function getPercentageDiff(a: number, b: number) {
 	if (b === 0) return 100
 	if (a === 0) return 0
-	return (a / b) * 100
+	return Number(((a - b) / b) * 100).toLocaleString(undefined, {
+		maximumFractionDigits: 1,
+		compactDisplay: 'short',
+	})
 }
 function AdminPage() {
 	const {

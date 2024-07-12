@@ -69,7 +69,7 @@ export default function ProfileRoute() {
 						<Button.Root type="submit" variant="outlined">
 							<Button.Label>Poke</Button.Label>
 							<Button.Icon type="trailing">
-								<Icon name="arrow-right" />
+								<Icon name="hand-finger-right" />
 							</Button.Icon>
 						</Button.Root>
 					</Form>

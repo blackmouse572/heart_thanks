@@ -49,8 +49,10 @@ const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
 
 const CommandInput = React.forwardRef<
 	React.ElementRef<typeof CommandPrimitive.Input>,
-	React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
->(({ className, ...props }, ref) => (
+	React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input> & {
+		isLoading?: boolean
+	}
+>(({ className, isLoading, ...props }, ref) => (
 	<div className="flex items-center border-b px-3" cmdk-input-wrapper="">
 		<Icon
 			name="magnifying-glass"
@@ -64,6 +66,12 @@ const CommandInput = React.forwardRef<
 			)}
 			{...props}
 		/>
+		{isLoading && (
+			<Icon
+				name="loader-quarter"
+				className="h-4 w-4 shrink-0 animate-spin opacity-50"
+			/>
+		)}
 	</div>
 ))
 

@@ -29,23 +29,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		LEFT JOIN UserImage ON User.id = UserImage.userId
 		WHERE User.username LIKE ${like}
 		OR User.name LIKE ${like}
-		ORDER BY (
-			SELECT Note.updatedAt
-			FROM Note
-			WHERE Note.ownerId = User.id
-			ORDER BY Note.updatedAt DESC
-			LIMIT 1
-		) DESC
+		-- ORDER BY (
+		-- 	SELECT Note.updatedAt
+		-- 	FROM Note
+		-- 	WHERE Note.ownerId = User.id
+		-- 	ORDER BY Note.updatedAt DESC
+		-- 	LIMIT 1
+		-- ) DESC
 		LIMIT 50
 	`
-
 	const result = UserSearchResultsSchema.safeParse(rawUsers)
 	if (!result.success) {
-		return json({ status: 'error', error: result.error.message } as const, {
-			status: 400,
-		})
+		return json(
+			{ status: 'error', users: [], error: result.error.message } as const,
+			{
+				status: 400,
+			},
+		)
 	}
-	return json({ status: 'idle', users: result.data } as const)
+	return json({ status: 'idle', users: result.data, error: '' } as const)
 }
 
 export default function UsersRoute() {

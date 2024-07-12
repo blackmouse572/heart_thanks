@@ -8,7 +8,7 @@ import { useCallback } from 'react'
 
 type Data = {
 	value: number
-	diff?: number
+	diff?: number | string
 	label: React.ReactNode
 }
 type StackedCardsProps = {
@@ -21,7 +21,7 @@ function getTrend(diff?: number) {
 }
 function StackedCards({ data, isLoading = false }: StackedCardsProps) {
 	const renderItem = useCallback(({ label, diff, value }: Data) => {
-		const trend = getTrend(diff)
+		const trend = getTrend(diff as number)
 		return (
 			<div key={label?.toString()} className="px-4">
 				{typeof label === 'string' ? (
@@ -48,7 +48,7 @@ function StackedCards({ data, isLoading = false }: StackedCardsProps) {
 								/>
 							)}
 							<Text size="sm" className="my-0">
-								{diff}%
+								{diff}
 							</Text>
 						</div>
 					)}
