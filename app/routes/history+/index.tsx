@@ -280,7 +280,7 @@ function HistoryPage() {
 	)
 }
 
-function EmptyTable() {
+export function EmptyTable() {
 	return (
 		<div className="flex flex-col items-center justify-center space-y-8 py-4">
 			<div className="space-y-2 text-center">

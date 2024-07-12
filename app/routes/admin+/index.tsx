@@ -173,7 +173,7 @@ function AdminPage() {
 		recentTransactions,
 	} = useLoaderData<typeof loader>()
 	return (
-		<div className="container mt-5 space-y-4">
+		<div className="container mt-24 space-y-4 lg:mt-5">
 			<React.Suspense fallback={<StackedCards isLoading data={[]} />}>
 				<Await
 					resolve={Promise.all([
@@ -221,7 +221,7 @@ function AdminPage() {
 				</Await>
 			</React.Suspense>
 
-			<div className="grid gap-6 lg:grid-cols-2">
+			<div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 				<div className="flex flex-col gap-4">
 					<Card variant="outlined">
 						<Title>Quick access</Title>
@@ -229,7 +229,7 @@ function AdminPage() {
 							You can change this on{' '}
 							<NavLink to="/admin/settings">setting</NavLink>
 						</Caption>
-						<div className="mt-5 grid grid-cols-2">
+						<div className="mt-5 grid grid-cols-1 gap-2 lg:grid-cols-2 lg:gap-1">
 							<Link.Root to="/admin/users" intent="primary">
 								<Link.Icon>
 									<Icon name="avatar" />
@@ -256,7 +256,7 @@ function AdminPage() {
 							</Link.Root>
 						</div>
 					</Card>
-					<Card variant="outlined" className="flex-1">
+					<Card variant="outlined" className="min-h-[400px] flex-1">
 						<React.Suspense
 							fallback={<MostPointUserChart isLoading mostPointsUser={[]} />}
 						>

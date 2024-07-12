@@ -19,7 +19,9 @@ function TablePagination({ metadata }: PaginationProps) {
 			newSearchParams.set('skip', String(page * take - take))
 			newSearchParams.set('take', String(take))
 
-			setSearchParams(newSearchParams)
+			setSearchParams(newSearchParams, {
+				preventScrollReset: true,
+			})
 		},
 		[searchParams],
 	)
@@ -56,14 +58,25 @@ function TablePagination({ metadata }: PaginationProps) {
 						aria-disabled={item.disabled}
 						onClick={item.action}
 					>
-						<Button.Root
-							isIcon
-							size="sm"
-							disabled={item.disabled}
-							variant={item.active ? 'solid' : 'ghost'}
-						>
-							<Button.Label>{item.value}</Button.Label>
-						</Button.Root>
+						{item.value === '...' ? (
+							<Button.Root
+								className="disabled:bg-transparent"
+								intent="gray"
+								variant="soft"
+								disabled
+							>
+								<Button.Label>{item.value}</Button.Label>
+							</Button.Root>
+						) : (
+							<Button.Root
+								isIcon
+								size="sm"
+								disabled={item.disabled}
+								variant={item.active ? 'solid' : 'ghost'}
+							>
+								<Button.Label>{item.value}</Button.Label>
+							</Button.Root>
+						)}
 					</PaginationItem>
 				))}
 

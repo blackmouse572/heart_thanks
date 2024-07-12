@@ -62,17 +62,19 @@ export function getUserTransactionCount(
 	return prisma.transactions.count({ where, orderBy: sort })
 }
 
-export function getMinTransactionAmount(userId: string) {
+export function getMinTransactionAmount(userId?: string) {
 	return prisma.transactions.findFirst({
 		where: {
-			OR: [
-				{
-					ownerId: userId,
-				},
-				{
-					receiverId: userId,
-				},
-			],
+			OR: userId
+				? [
+						{
+							ownerId: userId,
+						},
+						{
+							receiverId: userId,
+						},
+					]
+				: undefined,
 		},
 		orderBy: {
 			amount: 'asc',
@@ -83,17 +85,19 @@ export function getMinTransactionAmount(userId: string) {
 	})
 }
 
-export function getMaxTransactionAmount(userId: string) {
+export function getMaxTransactionAmount(userId?: string) {
 	return prisma.transactions.findFirst({
 		where: {
-			OR: [
-				{
-					ownerId: userId,
-				},
-				{
-					receiverId: userId,
-				},
-			],
+			OR: userId
+				? [
+						{
+							ownerId: userId,
+						},
+						{
+							receiverId: userId,
+						},
+					]
+				: undefined,
 		},
 		orderBy: {
 			amount: 'desc',
