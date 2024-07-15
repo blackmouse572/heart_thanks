@@ -11,12 +11,7 @@ import { useFetcher, useLoaderData } from '@remix-run/react'
 import { useState } from 'react'
 import { Icon } from '#app/components/ui/icon.tsx'
 import { StatusButton } from '#app/components/ui/status-button.tsx'
-import {
-	Tooltip,
-	TooltipContent,
-	TooltipProvider,
-	TooltipTrigger,
-} from '#app/components/ui/tooltip.tsx'
+
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { resolveConnectionData } from '#app/utils/connections.server.ts'
 import {
@@ -31,6 +26,7 @@ import { makeTimings } from '#app/utils/timing.server.ts'
 import { createToastHeaders } from '#app/utils/toast.server.ts'
 import { type BreadcrumbHandle } from './profile.tsx'
 import Button from '#app/components/ui/button.js'
+import Tooltip from '#app/components/tooltip.js'
 
 export const handle: BreadcrumbHandle & SEOHandle = {
 	breadcrumb: <Icon name="link-2">Connections</Icon>,
@@ -187,40 +183,33 @@ function Connection({
 			{canDelete ? (
 				<deleteFetcher.Form method="POST">
 					<input name="connectionId" value={connection.id} type="hidden" />
-					<TooltipProvider>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<StatusButton
-									name="intent"
-									value="delete-connection"
-									intent="danger"
-									size="sm"
-									status={
-										deleteFetcher.state !== 'idle'
-											? 'pending'
-											: deleteFetcher.data?.status ?? 'idle'
-									}
-								>
-									<Button.Icon type="only">
-										<Icon name="cross-1" />
-									</Button.Icon>
-								</StatusButton>
-							</TooltipTrigger>
-							<TooltipContent>Disconnect this account</TooltipContent>
-						</Tooltip>
-					</TooltipProvider>
+					<StatusButton
+						message={'Delete connection'}
+						name="intent"
+						value="delete-connection"
+						intent="danger"
+						size="sm"
+						status={
+							deleteFetcher.state !== 'idle'
+								? 'pending'
+								: deleteFetcher.data?.status ?? 'idle'
+						}
+					>
+						<Button.Icon type="only">
+							<Icon name="cross-1" />
+						</Button.Icon>
+					</StatusButton>
 				</deleteFetcher.Form>
 			) : (
-				<TooltipProvider>
-					<Tooltip open={infoOpen} onOpenChange={setInfoOpen}>
-						<TooltipTrigger onClick={() => setInfoOpen(true)}>
-							<Icon name="question-mark-circled"></Icon>
-						</TooltipTrigger>
-						<TooltipContent>
-							You cannot delete your last connection unless you have a password.
-						</TooltipContent>
-					</Tooltip>
-				</TooltipProvider>
+				<Tooltip
+					open={infoOpen}
+					onOpenChange={setInfoOpen}
+					content={
+						'You cannot delete your last connection unless you have a password.'
+					}
+				>
+					<Icon name="question-mark-circled" />
+				</Tooltip>
 			)}
 		</div>
 	)
