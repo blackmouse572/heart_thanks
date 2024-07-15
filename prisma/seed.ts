@@ -14,6 +14,7 @@ import { insertGitHubUser } from '#tests/mocks/github.ts'
 import { User } from '@prisma/client'
 import seedUsers from '#tests/fixtures/users.json'
 import { promiseHash } from 'remix-utils/promise'
+import { faker } from '@faker-js/faker'
 
 async function seed() {
 	console.log('🌱 Seeding...')
@@ -82,8 +83,8 @@ async function seed() {
 					password: { create: createPassword(userData.username) },
 					image: { create: userImage },
 					roles: { connect: { name: 'user' } },
-					balance: 30,
-					vault: 0,
+					balance: faker.number.int({ min: 10, max: 30 }),
+					vault: faker.number.int({ min: 10, max: 30 }),
 				},
 			})
 			.catch((e) => {

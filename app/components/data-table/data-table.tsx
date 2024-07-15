@@ -25,9 +25,10 @@ import {
 	type TableOptions,
 	useReactTable,
 } from '@tanstack/react-table'
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useImperativeHandle, useMemo } from 'react'
 import { Icon } from '../ui/icon'
 import TablePagination from './pagination'
+import Button from '../ui/button'
 
 type DataTableProps<TData, TValue> = Partial<TableOptions<TData>> & {
 	columns: ColumnDef<TData, TValue>[]
@@ -37,6 +38,7 @@ type DataTableProps<TData, TValue> = Partial<TableOptions<TData>> & {
 	description?: React.ReactNode
 	filter?: React.ReactNode
 	actions?: ContextMenuItem<TData>[][]
+	onSelectionChange?: (selected: RowSelectionState) => void
 	className?: string
 } & (
 		| {
@@ -49,19 +51,25 @@ type DataTableProps<TData, TValue> = Partial<TableOptions<TData>> & {
 		  }
 	)
 
-export function DataTable<TData, TValue>({
-	columns,
-	data,
-	filter,
-	title,
-	actions,
-	emptyRender,
-	description,
-	withPagination,
-	className,
-	metadata,
-	...options
-}: Readonly<DataTableProps<TData, TValue>>) {
+export type DataTableRef = {
+	deselectAll: () => void
+}
+export function DataTable<TData, TValue>(
+	{
+		columns,
+		data,
+		filter,
+		title,
+		actions,
+		emptyRender,
+		description,
+		withPagination,
+		className,
+		metadata,
+		...options
+	}: Readonly<DataTableProps<TData, TValue>>,
+	ref: React.Ref<DataTableRef>,
+) {
 	const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
 	const [sorting, setSorting] = React.useState<SortingState>([])
 	const [searchParams] = useSearchParams()
@@ -74,7 +82,10 @@ export function DataTable<TData, TValue>({
 		data,
 		columns,
 		getCoreRowModel: getCoreRowModel(),
-		onRowSelectionChange: setRowSelection,
+		onRowSelectionChange: (selected) => {
+			setRowSelection(selected)
+			options.onSelectionChange?.(selected as any)
+		},
 		onSortingChange: setSorting,
 		state: {
 			rowSelection,
@@ -83,6 +94,9 @@ export function DataTable<TData, TValue>({
 		manualSorting: true,
 		...options,
 	})
+	useImperativeHandle(ref, () => ({
+		deselectAll: table.resetRowSelection,
+	}))
 	useEffect(() => {
 		if (!sorting.length || sorting.length <= 0) return
 		const formData = new FormData()
@@ -99,9 +113,22 @@ export function DataTable<TData, TValue>({
 	const renderDescription = useMemo(() => {
 		if (totalSelectCount > 0) {
 			return (
-				<Caption>
-					Selected <b>{totalSelectCount}</b> rows
-				</Caption>
+				<div className="relative">
+					<Caption className="">
+						Selected <b>{totalSelectCount}</b> rows{' '}
+					</Caption>
+					<Button.Root
+						size="xs"
+						variant="ghost"
+						intent="gray"
+						onClick={() => table.resetRowSelection()}
+						className="absolute -right-8 top-1/2 -translate-y-1/2"
+					>
+						<Button.Icon type="only">
+							<Icon name="x" />
+						</Button.Icon>
+					</Button.Root>
+				</div>
 			)
 		}
 		return <Caption>{description}</Caption>
@@ -145,7 +172,7 @@ export function DataTable<TData, TValue>({
 													)}
 											{{
 												asc: (
-													<Icon className={'r absolute'} name="chevron-down" />
+													<Icon className={'absolute'} name="chevron-down" />
 												),
 												desc: <Icon className={'absolute'} name="chevron-up" />,
 											}[header.column.getIsSorted() as string] || null}
@@ -211,4 +238,10 @@ export function DataTable<TData, TValue>({
 		</Card>
 	)
 }
-export default DataTable
+function fixedForwardRef<T, P = {}>(
+	render: (props: P, ref: React.Ref<T>) => React.ReactNode,
+): (props: P & React.RefAttributes<T>) => React.ReactNode {
+	return React.forwardRef(render) as any
+}
+const DataTableRef = fixedForwardRef(DataTable)
+export default DataTableRef

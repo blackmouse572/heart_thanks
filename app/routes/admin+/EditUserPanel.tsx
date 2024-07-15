@@ -33,6 +33,7 @@ type UpdateUserPanelProps = {
 	settings: ApplicationSetting
 	user: LoaderDataUser
 	open: boolean
+	onEdited: () => void
 	setOpen: (open: boolean) => void
 }
 
@@ -41,6 +42,7 @@ function UpdateUserPanel({
 	open,
 	setOpen,
 	user: _user,
+	onEdited,
 }: UpdateUserPanelProps) {
 	const fetcher = useFetcher<typeof roleLoader>()
 	const user = useMemo(
@@ -64,6 +66,10 @@ function UpdateUserPanel({
 				schema: UpdateUserSchema,
 			})
 		},
+		onSubmit: () => {
+			setOpen(false)
+			return onEdited()
+		},
 		lastResult: actionData?.user as any,
 		shouldValidate: 'onBlur',
 	})
@@ -73,13 +79,6 @@ function UpdateUserPanel({
 	useEffect(() => {
 		fetcher.load('/admin/roles')
 	}, [])
-
-	useEffect(() => {
-		if ((actionData as any)?.user?.id) {
-			toast.success('Create new user')
-			setOpen(false)
-		}
-	}, [actionData])
 
 	return (
 		<SlidePanel
@@ -93,7 +92,7 @@ function UpdateUserPanel({
 				<Form
 					{...getFormProps(form)}
 					method="PUT"
-					action={`/admin/users?${location.search}`}
+					action={`/admin/users${location.search}`}
 					className="flex w-full flex-1 flex-col"
 				>
 					<input

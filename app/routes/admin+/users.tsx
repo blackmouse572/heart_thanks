@@ -1,5 +1,7 @@
 import Checkbox from '#app/components/checkbox.js'
-import DataTable from '#app/components/data-table/data-table.js'
+import DataTable, {
+	DataTableRef,
+} from '#app/components/data-table/data-table.js'
 import Badge from '#app/components/ui/badge.js'
 import { Caption } from '#app/components/ui/typography/index.js'
 import { Link } from '#app/components/ui/typography/link.js'
@@ -68,7 +70,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 import { checkHoneypot } from '#app/utils/honeypot.server.js'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { Icon } from '#app/components/ui/icon.js'
 import UpdateUserPanel from './EditUserPanel'
 import DeleteUser from './DeleteUserModal'
@@ -211,6 +213,7 @@ function UserAdminPage() {
 	const [updateOpen, setUpdateOpen] = useState(false)
 	const [deleteOpen, setDeleteOpen] = useState(false)
 	const firstSelected = useMemo(() => selectedUsers[0], [selectedUsers])
+	const tableRef = useRef<DataTableRef>(null)
 	const navigate = useNavigate()
 
 	const handleSetSelect = useCallback(
@@ -230,6 +233,7 @@ function UserAdminPage() {
 				data={users}
 				metadata={metadata as any}
 				columns={columns as any}
+				onSelectionChange={handleSetSelect}
 				withPagination
 				filter={
 					<Aligner>
@@ -275,6 +279,9 @@ function UserAdminPage() {
 			/>
 			{firstSelected && (
 				<UpdateUserPanel
+					onEdited={() => {
+						tableRef.current?.deselectAll()
+					}}
 					open={updateOpen}
 					setOpen={setUpdateOpen}
 					user={firstSelected}

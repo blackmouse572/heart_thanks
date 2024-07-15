@@ -1,6 +1,6 @@
 import Alert from '#app/components/alert-dialog.js'
 import Button from '#app/components/ui/button.js'
-import { useFetcher } from '@remix-run/react'
+import { useFetcher, useLocation } from '@remix-run/react'
 import { action as userLoader, LoaderDataUser } from './users'
 import { useCallback, useEffect } from 'react'
 import { useIsPending } from '#app/utils/misc.js'
@@ -63,7 +63,7 @@ function DeleteUser(props: DeleteUserProps) {
 						submit()
 					}}
 				>
-					<Button.Label>Delete</Button.Label>
+					<Button.Label>Delete ({users.length})</Button.Label>
 				</Button.Root>
 			}
 			trigger={<></>}

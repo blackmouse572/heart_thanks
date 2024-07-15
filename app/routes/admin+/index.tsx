@@ -96,7 +96,7 @@ export async function loader({ request }: ActionFunctionArgs) {
 		.findMany({
 			take: 5,
 			orderBy: {
-				// vault: 'desc',
+				vault: 'desc',
 			},
 		})
 		.then((user) => user)

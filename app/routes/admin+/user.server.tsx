@@ -220,11 +220,19 @@ export async function updateUser(formData: FormData) {
 			vault: value.vaul,
 			roles: value.roles
 				? {
-						connect: value.roles.map((role: string) => ({
+						set: value.roles.map((role: string) => ({
 							id: role,
 						})),
 					}
 				: undefined,
+		},
+		include: {
+			roles: {
+				select: {
+					id: true,
+					name: true,
+				},
+			},
 		},
 	})
 

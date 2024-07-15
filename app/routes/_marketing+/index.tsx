@@ -1,9 +1,7 @@
 import { type MetaFunction } from '@remix-run/node'
 
-import { cn } from '#app/utils/misc.tsx'
+import { cn, getUserImgSrc } from '#app/utils/misc.tsx'
 import { logos } from './logos/logos.ts'
-import { SiteHeader } from '#app/components/navbar.js'
-import Tooltip from '#app/components/tooltip.js'
 
 export const meta: MetaFunction = () => [{ title: 'Heart Thanks' }]
 
@@ -24,7 +22,42 @@ const rowClasses: Record<(typeof logos)[number]['row'], string> = {
 	6: 'xl:row-start-6',
 }
 
+import { type LoaderFunctionArgs, json } from '@remix-run/node'
+import { prisma } from '#app/utils/db.server.js'
+import { useLoaderData } from '@remix-run/react'
+import { Title } from '#app/components/ui/typography/title.js'
+import { Display } from '#app/components/ui/typography/display.js'
+import {
+	Bar,
+	BarChart,
+	CartesianGrid,
+	ResponsiveContainer,
+	Tooltip,
+	XAxis,
+	YAxis,
+} from 'recharts'
+import { area, cartesianGrid } from '@tailus/themer'
+import Custom from '#app/components/ui/visualizations/Tooltip.js'
+
+export async function loader({ request }: LoaderFunctionArgs) {
+	const topUser = await prisma.user.findMany({
+		take: 3,
+		orderBy: {
+			vault: 'desc',
+		},
+		include: {
+			image: {
+				select: {
+					id: true,
+				},
+			},
+		},
+	})
+	return json({ user: topUser })
+}
+
 export default function Index() {
+	const { user } = useLoaderData<typeof loader>()
 	return (
 		<main className="font-poppins grid h-full place-items-center">
 			<div className="grid place-items-center px-4 py-16 xl:grid-cols-2 xl:gap-24">
@@ -65,30 +98,75 @@ export default function Index() {
 						file for how to get your project off the ground!
 					</p>
 				</div>
-				<ul className="mt-16 flex max-w-3xl flex-wrap justify-center gap-2 sm:gap-4 xl:mt-0 xl:grid xl:grid-flow-col xl:grid-cols-5 xl:grid-rows-6">
-					{logos.map((logo, i) => (
-						<li
-							key={logo.href}
-							className={cn(
-								columnClasses[logo.column],
-								rowClasses[logo.row],
-								'animate-roll-reveal [animation-fill-mode:backwards]',
-							)}
-							style={{ animationDelay: `${i * 0.07}s` }}
-						>
-							<Tooltip
-								contentProps={{ fancy: true, inverted: false }}
-								content={logo.alt}
+				<ul className="mt-16 space-y-5">
+					<div className="h-56 w-full sm:h-80 sm:min-w-[36rem] sm:max-w-2xl">
+						<ResponsiveContainer width="100%" height="100%">
+							<BarChart
+								data={user.map((u) => ({
+									name: u.name,
+									user: u,
+									point: u.vault,
+								}))}
 							>
-								<a
-									href={logo.href}
-									className="grid size-20 place-items-center rounded-2xl bg-violet-600/10 p-4 transition hover:-rotate-6 hover:bg-violet-600/15 dark:bg-violet-200 dark:hover:bg-violet-100 sm:size-24"
-								>
-									<img src={logo.src} alt="" />
-								</a>
-							</Tooltip>
-						</li>
-					))}
+								<YAxis
+									className="text-[--caption-text-color]"
+									fontSize={12}
+									tickLine={false}
+									axisLine={false}
+								/>
+								<XAxis
+									className="text-[--caption-text-color]"
+									dataKey="name"
+									fontSize={12}
+									tickLine={false}
+									axisLine={false}
+									tick={({ x, y, payload }) => (
+										<svg x={x - 15} y={y - 5}>
+											<image
+												width={35}
+												height={35}
+												className="rounded-full"
+												xlinkHref={getUserImgSrc(
+													user[payload.index]?.image?.id,
+												)}
+											/>
+										</svg>
+									)}
+								/>
+								<CartesianGrid
+									className={cartesianGrid()}
+									vertical={false}
+									stroke="currentColor"
+									strokeDasharray={3}
+								/>
+								<Tooltip
+									cursor={{
+										fill: 'transparent',
+									}}
+									content={
+										<Custom color="red" payload={[]} active label={'User'} />
+									}
+								/>
+								<Bar
+									className={area({ gradient: true, intent: 'secondary' })}
+									radius={[8, 8, 8, 8]}
+									fill="currentColor"
+									dataKey="point"
+									label={({ value, x, y, width, height }) => (
+										<text
+											x={x + width / 2}
+											y={y + height / 2}
+											fill="white"
+											textAnchor="middle"
+											dy={-6}
+										>
+											{value}💖
+										</text>
+									)}
+								/>
+							</BarChart>
+						</ResponsiveContainer>
+					</div>
 				</ul>
 			</div>
 		</main>
