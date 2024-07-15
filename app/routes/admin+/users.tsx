@@ -16,17 +16,21 @@ import {
 	ActionFunctionArgs,
 	json,
 } from '@remix-run/node'
-import { useLoaderData } from '@remix-run/react'
-import { ColumnDef } from '@tanstack/react-table'
-import { getAllUsers } from './user.server'
+import { useLoaderData, useNavigate } from '@remix-run/react'
+import {
+	ColumnDef,
+	RowSelectionRow,
+	RowSelectionState,
+} from '@tanstack/react-table'
+import { createNewUser, getAllUsers, updateUser } from './user.server'
 import FilterItem from './filter'
 import Aligner from '#app/components/ui/aligner.js'
-import CreateUserPanel, { CreateNewUserSchema } from './CreateUserPanel'
+import CreateUserPanel from './CreateUserPanel'
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	await requireUserWithRole(request, 'admin')
 	const metadata = getMetadata(request)
-	const { search, min, max, sort, skip, take } = metadata
+	const { search, sort } = metadata
 	const sortObj = parseSort(sort)
 	const where: Prisma.UserWhereInput = {
 		AND: [
@@ -64,107 +68,48 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 import { checkHoneypot } from '#app/utils/honeypot.server.js'
-import { parseWithZod } from '@conform-to/zod'
-import { z } from 'zod'
-import { createPassword } from '#tests/db-utils.js'
+import { useCallback, useMemo, useState } from 'react'
+import { Icon } from '#app/components/ui/icon.js'
+import UpdateUserPanel from './EditUserPanel'
+import DeleteUser from './DeleteUserModal'
 
 export async function action({ request }: ActionFunctionArgs) {
 	requireUserWithPermission(request, 'create:user:any')
 	const formData = await request.formData()
+	const formMethod = request.method
 	checkHoneypot(formData)
-	const submission = await parseWithZod(formData, {
-		schema: (intent) =>
-			CreateNewUserSchema.transform(async (data, ctx) => {
-				if (intent !== null) return data
 
-				// username should be unique
-				const user = await prisma.user.findUnique({
-					where: {
-						username: data.username,
-					},
-				})
-				if (user) {
-					ctx.addIssue({
-						code: z.ZodIssueCode.custom,
-						path: ['username'],
-						message: 'Username already exists',
-					})
-					return z.NEVER
-				}
-
-				// email should be unique
-				const email = await prisma.user.findUnique({
-					where: {
-						email: data.email,
-					},
-				})
-
-				if (email) {
-					ctx.addIssue({
-						code: z.ZodIssueCode.custom,
-						path: ['email'],
-						message: 'Email already exists',
-					})
-					return z.NEVER
-				}
-
-				// roles should be valid
-				const roles = await prisma.role.findMany({
-					where: {
-						id: {
-							in: data.roles,
-						},
-					},
-				})
-
-				if (roles.length !== data.roles.length) {
-					ctx.addIssue({
-						code: z.ZodIssueCode.custom,
-						path: ['roles'],
-						message: 'Invalid role',
-					})
-					return z.NEVER
-				}
-
-				return data
-			}),
-		async: true,
-	})
-	if (submission.status !== 'success' || !submission.value) {
-		console.error(submission)
-		return json(
-			{ result: submission.reply(), user: {} },
-			{ status: submission.status === 'error' ? 400 : 200 },
-		)
+	if (formMethod === 'POST') {
+		return createNewUser(formData)
+	} else if (formMethod === 'PUT') {
+		// Update user
+		return updateUser(formData)
+	} else if (formMethod === 'DELETE') {
+		// Delete user
+		const ids = formData.get('ids') as string
+		const idArray = ids.split(',')
+		const result = await prisma.user.deleteMany({
+			where: {
+				id: {
+					in: idArray,
+				},
+			},
+		})
+		return json({
+			result: {
+				ok: true,
+				amount: result.count,
+			},
+			user: {},
+		})
 	}
-	const { value } = submission
-	const user = await prisma.user.create({
-		data: {
-			email: value.email,
-			username: value.username,
-			balance: value.balance,
-			name: value.name,
-			password: {
-				create: createPassword(value.password),
-			},
-			vault: value.vaul,
-			roles: {
-				connect: value.roles.map((role) => ({
-					id: role,
-				})),
-			},
-		},
-	})
-	return json({
-		user,
-		result: {},
-	})
+	throw new Error('Method not allowed')
 }
 
-type LoaderDataUser = Awaited<
+export type LoaderDataUser = Awaited<
 	ReturnType<Awaited<ReturnType<typeof loader>>['json']>
 >['users'][0]
-type LoaderRole = LoaderDataUser['roles'][0]
+export type LoaderRole = LoaderDataUser['roles'][0]
 
 const columns: ColumnDef<LoaderDataUser>[] = [
 	{
@@ -199,13 +144,11 @@ const columns: ColumnDef<LoaderDataUser>[] = [
 		cell: (cell) => {
 			const id = cell.getValue() as LoaderDataUser
 			return (
-				<Link href={`/users/${id.username}`}>
-					<UserAvatar
-						imageId={id.image?.id}
-						title={id.name ?? id.username}
-						description={id.username}
-					/>
-				</Link>
+				<UserAvatar
+					imageId={id.image?.id}
+					title={id.name ?? id.username}
+					description={id.username}
+				/>
 			)
 		},
 	},
@@ -264,11 +207,26 @@ const columns: ColumnDef<LoaderDataUser>[] = [
 ]
 function UserAdminPage() {
 	const { metadata, users } = useLoaderData<typeof loader>()
+	const [selectedUsers, setSelectedUsers] = useState<LoaderDataUser[]>([])
+	const [updateOpen, setUpdateOpen] = useState(false)
+	const [deleteOpen, setDeleteOpen] = useState(false)
+	const firstSelected = useMemo(() => selectedUsers[0], [selectedUsers])
+	const navigate = useNavigate()
+
+	const handleSetSelect = useCallback(
+		(obj: RowSelectionState) => {
+			const ids = Object.keys(obj)
+			let newSelectedUsers = users.filter((user) => ids.includes(user.id))
+			setSelectedUsers(newSelectedUsers as any)
+		},
+		[users],
+	)
+
 	return (
 		<div className="container mt-24 lg:mt-5">
 			<DataTable
 				title="Users"
-				description
+				description="Manage users on the platform"
 				data={users}
 				metadata={metadata as any}
 				columns={columns as any}
@@ -279,7 +237,57 @@ function UserAdminPage() {
 						<FilterItem />
 					</Aligner>
 				}
+				getRowId={(row) => row.id}
+				actions={[
+					[
+						{
+							label: 'View details',
+							icon: <Icon name="eye" />,
+							mode: 'single',
+							onClick: (a) => {
+								const ids = Object.keys(a)
+								const user = users.find((u) => u.id === ids[0])
+								navigate(`/users/${user?.username}`)
+							},
+						},
+						{
+							label: 'Edit user',
+							icon: <Icon name="pencil-1" />,
+							mode: 'single',
+							onClick: (a) => {
+								handleSetSelect(a)
+								setUpdateOpen(true)
+							},
+						},
+					],
+					[
+						{
+							label: 'Delete users',
+							icon: <Icon name="trash" />,
+							intent: 'danger',
+							onClick: (a) => {
+								handleSetSelect(a)
+								setDeleteOpen(true)
+							},
+						},
+					],
+				]}
 			/>
+			{firstSelected && (
+				<UpdateUserPanel
+					open={updateOpen}
+					setOpen={setUpdateOpen}
+					user={firstSelected}
+					settings={metadata.setting}
+				/>
+			)}
+			{firstSelected && (
+				<DeleteUser
+					open={deleteOpen}
+					setOpen={setDeleteOpen}
+					users={selectedUsers}
+				/>
+			)}
 		</div>
 	)
 }

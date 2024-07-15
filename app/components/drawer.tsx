@@ -26,11 +26,16 @@ function SlidePanel({
 			{...rootProps}
 			onOpenChange={setOpen}
 			open={open}
+			withControler
+			handleOnly
 		>
 			<Drawer.Trigger asChild>{trigger}</Drawer.Trigger>
 			<Drawer.Portal>
 				<Drawer.Overlay className="z-[11]" />
-				<Drawer.Content className="inset-auto bottom-4 right-3 top-4 z-[11] flex min-w-[500px] flex-col overflow-visible rounded-[--feedback-radius]">
+				<Drawer.Content
+					className="inset-auto bottom-4 right-3 top-4 z-[11] flex min-w-[500px] flex-col overflow-visible rounded-[--feedback-radius]"
+					autoFocus={false}
+				>
 					{withCloseButton && <Drawer.Close />}
 					<div className="mb-5">
 						<Drawer.Title size="lg">{title}</Drawer.Title>
