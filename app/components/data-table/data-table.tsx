@@ -54,7 +54,7 @@ type DataTableProps<TData, TValue> = Partial<TableOptions<TData>> & {
 export type DataTableRef = {
 	deselectAll: () => void
 }
-export function DataTable<TData, TValue>(
+function DataTable<TData, TValue>(
 	{
 		columns,
 		data,

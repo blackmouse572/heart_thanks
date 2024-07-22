@@ -23,10 +23,12 @@ export function useUser() {
 	}
 	return maybeUser
 }
-
-type Action = 'create' | 'read' | 'update' | 'delete'
-type Entity = 'user' | 'transaction' | 'role' | 'permission'
-type Access = 'own' | 'any' | 'own,any' | 'any,own'
+export const ACTIONS = ['create', 'read', 'update', 'delete'] as const
+export type Action = (typeof ACTIONS)[number]
+export const ENTITIES = ['user', 'transaction', 'role', 'permission'] as const
+export type Entity = (typeof ENTITIES)[number]
+export const ACCESSES = ['own', 'any', 'own,any', 'any,own'] as const
+export type Access = (typeof ACCESSES)[number]
 export type PermissionString =
 	| `${Action}:${Entity}`
 	| `${Action}:${Entity}:${Access}`

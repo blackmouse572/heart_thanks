@@ -153,33 +153,33 @@ async function seed() {
 	})
 	console.timeEnd(`🐨 Created admin user "jaden.nguyen"`)
 
-	console.time(`📝 Created transactions...`)
-	const totalTransactionsPerUser = 5
-	users.forEach(async (user) => {
-		for (let index = 0; index < totalTransactionsPerUser; index++) {
-			const randomReceiver = await getRamdomReceiver(users, user)
-			const randomReviewed = Math.random() >= 0.5
-			const randomReviewedAt = randomReviewed ? new Date() : null
-			const randomReviewer = await getRandomReviewer(users, user)
-			await prisma.transactions.create({
-				data: {
-					amount: 10,
-					content: 'Seeded transaction content',
-					title: 'Seeded transaction title',
-					createdAt: new Date(),
-					updatedAt: new Date(),
-					owner: { connect: { id: user.id } },
-					receiver: { connect: { id: randomReceiver.id } },
-					reviewedAt: randomReviewedAt,
-					reviewBy: randomReviewer
-						? { connect: { id: randomReviewer.id } }
-						: undefined,
-					reviewed: randomReviewed,
-				},
-			})
-		}
-	})
-	console.timeEnd(`📝 Created transactions...`)
+	// console.time(`📝 Created transactions...`)
+	// const totalTransactionsPerUser = 5
+	// users.forEach(async (user) => {
+	// 	for (let index = 0; index < totalTransactionsPerUser; index++) {
+	// 		const randomReceiver = await getRamdomReceiver(users, user)
+	// 		const randomReviewed = Math.random() >= 0.5
+	// 		const randomReviewedAt = randomReviewed ? new Date() : null
+	// 		const randomReviewer = await getRandomReviewer(users, user)
+	// 		await prisma.transactions.create({
+	// 			data: {
+	// 				amount: 10,
+	// 				content: 'Seeded transaction content',
+	// 				title: 'Seeded transaction title',
+	// 				createdAt: new Date(),
+	// 				updatedAt: new Date(),
+	// 				owner: { connect: { id: user.id } },
+	// 				receiver: { connect: { id: randomReceiver.id } },
+	// 				reviewedAt: randomReviewedAt,
+	// 				reviewBy: randomReviewer
+	// 					? { connect: { id: randomReviewer.id } }
+	// 					: undefined,
+	// 				reviewed: randomReviewed,
+	// 			},
+	// 		})
+	// 	}
+	// })
+	// console.timeEnd(`📝 Created transactions...`)
 
 	console.time(`⚙️ Created settings...`)
 	const totalSettings = 5

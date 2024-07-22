@@ -254,6 +254,14 @@ function AdminPage() {
 									<Text>Application Settings</Text>
 								</Link.Label>
 							</Link.Root>
+							<Link.Root to="/admin/roles" intent="success">
+								<Link.Icon>
+									<Icon name="chevron-up-right" />
+								</Link.Icon>
+								<Link.Label>
+									<Text>Roles manager</Text>
+								</Link.Label>
+							</Link.Root>
 						</div>
 					</Card>
 					<Card variant="outlined" className="min-h-[400px] flex-1">
