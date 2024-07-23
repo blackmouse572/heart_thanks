@@ -44,6 +44,12 @@ import React, { useCallback, useEffect } from 'react'
 import { HoneypotInputs } from 'remix-utils/honeypot/react'
 import { z } from 'zod'
 import { transferHandler } from './transfer.server'
+import {
+	ACCESSES,
+	ACTIONS,
+	ENTITIES,
+	userHasPermission,
+} from '#app/utils/user.js'
 
 const TransferSchema = z.object({
 	amount: z.number(),
@@ -59,6 +65,36 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		redirectTo: '/login',
 	})
 	const user = await prisma.user.findUnique({ where: { id: userId } })
+	const reviewer = await prisma.user
+		.findMany({
+			where: {
+				NOT: {
+					id: userId,
+				},
+				roles: {
+					some: {
+						permissions: {
+							some: {
+								entity: ENTITIES[1],
+								action: ACTIONS[2],
+								//acess should be any
+								access: ACCESSES[1],
+							},
+						},
+					},
+				},
+			},
+			include: {
+				image: {
+					select: {
+						id: true,
+						altText: true,
+					},
+				},
+			},
+		})
+		.then((u) => u)
+
 	const others = prisma.user
 		.findMany({
 			where: {
@@ -77,7 +113,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		})
 		.then((u) => u)
 
-	return defer({ user, others })
+	return defer({ user, reviewer, others })
 }
 
 export async function action({ request }: LoaderFunctionArgs) {
@@ -97,7 +133,14 @@ export async function action({ request }: LoaderFunctionArgs) {
 						where: { id: data.recipientId },
 					}),
 					prisma.user.findUnique({
-						where: { id: data.reviewerId },
+						where: {
+							id: data.reviewerId,
+						},
+						include: {
+							roles: {
+								include: { permissions: true },
+							},
+						},
 					}),
 				])
 				if (!senderUser || !receiverUser || !reviewerUser) {
@@ -105,6 +148,22 @@ export async function action({ request }: LoaderFunctionArgs) {
 						code: z.ZodIssueCode.custom,
 						message: 'Invalid user',
 					})
+					return z.NEVER
+				}
+
+				// check if reviewer has permission to review
+				const reviewerHasPermission = userHasPermission(
+					reviewerUser,
+					'update:transaction:any',
+				)
+
+				if (!reviewerHasPermission) {
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						message: 'Reviewer does not have permission to review',
+						path: ['reviewerId'],
+					})
+
 					return z.NEVER
 				}
 
@@ -182,7 +241,7 @@ export async function action({ request }: LoaderFunctionArgs) {
 }
 
 function TransferPage() {
-	const { others, user } = useLoaderData<typeof loader>()
+	const { others, reviewer, user } = useLoaderData<typeof loader>()
 	const actionData = useActionData<typeof action>()
 	const navigation = useNavigation()
 	const isSubmitting =
@@ -273,8 +332,11 @@ function TransferPage() {
 									errors={fields.amount.errors}
 								/>
 								<React.Suspense fallback={<p>loading</p>}>
-									<Await resolve={others} errorElement={<p>Error</p>}>
-										{(users) => {
+									<Await
+										resolve={Promise.all([others, reviewer])}
+										errorElement={<p>Error</p>}
+									>
+										{([users, reviewer]) => {
 											return (
 												<div className="gap-4 lg:flex">
 													<UserSelector
@@ -287,7 +349,7 @@ function TransferPage() {
 														field={fields.reviewerId}
 														label={'Reviewer'}
 														labelProps={{ htmlFor: fields.reviewerId.id }}
-														users={users as any}
+														users={reviewer as any}
 													/>
 												</div>
 											)
@@ -356,7 +418,10 @@ function UserSelector({
 		control.change(value)
 		const newSearchParams = new URLSearchParams(searchParams)
 		const fieldId = field.id
-		newSearchParams.set(fieldId, users.find((u) => u.id === value)!.username)
+		newSearchParams.set(
+			fieldId,
+			users.find((u) => u.id === value)?.username ?? '',
+		)
 		setSearchParams(newSearchParams)
 	}, [])
 

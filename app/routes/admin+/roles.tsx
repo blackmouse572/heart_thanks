@@ -1,20 +1,24 @@
 import Checkbox from '#app/components/checkbox.js'
-import DataTable, {
-	DataTableRef,
-} from '#app/components/data-table/data-table.js'
+import DataTable from '#app/components/data-table/data-table.js'
 import { prisma } from '#app/utils/db.server.js'
 import { requireUserWithPermission } from '#app/utils/permissions.server.js'
 import { getMetadata } from '#app/utils/request.server.js'
-import { type LoaderFunctionArgs, json } from '@remix-run/node'
+import {
+	type ActionFunctionArgs,
+	type LoaderFunctionArgs,
+	json,
+} from '@remix-run/node'
 import { useLoaderData } from '@remix-run/react'
 import { ColumnDef, RowSelectionState } from '@tanstack/react-table'
 import React, { useCallback, useMemo, useState } from 'react'
 import FilterItem from './filter'
 import users from './users'
-import SlidePanel from '#app/components/drawer.js'
 import { Icon } from '#app/components/ui/icon.js'
-import { z } from 'zod'
 import { CreateNewRoleSchema, CreateRolePanel } from './CreateRolePanel'
+
+import { parseWithZod } from '@conform-to/zod'
+import { Role } from '@prisma/client'
+import { z } from 'zod'
 
 export async function loader({ request }: LoaderFunctionArgs) {
 	await requireUserWithPermission(request, 'read:role:any,own')
@@ -46,15 +50,42 @@ export async function loader({ request }: LoaderFunctionArgs) {
 		metadata,
 	})
 }
-
-import { type ActionFunctionArgs } from '@remix-run/node'
-import { parseWithZod } from '@conform-to/zod'
-
 export async function action({ request }: ActionFunctionArgs) {
 	const formData = await request.formData()
 	const submission = await parseWithZod(formData, {
 		schema: (intent) =>
 			CreateNewRoleSchema.transform(async (data, ctx) => {
+				if (data.name === 'admin' || data.name === 'user') {
+					ctx.addIssue({
+						message: 'Role name cannot be admin or user',
+						code: z.ZodIssueCode.custom,
+						path: ['name'],
+					})
+
+					return
+				}
+				const [userRole, adminRole] = await Promise.all([
+					prisma.role.findFirst({
+						where: {
+							name: 'user',
+						},
+					}),
+					prisma.role.findFirst({
+						where: {
+							name: 'admin',
+						},
+					}),
+				])
+
+				if (data.id === userRole?.id || data.id === adminRole?.id) {
+					ctx.addIssue({
+						message: 'Role cannot be updated',
+						code: z.ZodIssueCode.custom,
+						path: ['name'],
+					})
+					return
+				}
+
 				const toPermission = data.permissions
 				data.permissions = toPermission
 					?.filter((a) => a.enabled === 'on')
@@ -71,8 +102,59 @@ export async function action({ request }: ActionFunctionArgs) {
 		)
 	}
 	const { value } = submission
+	const { name, permissions, description } = value
+	const queryPermissions = permissions.map((per) => {
+		const { entity, action, access } = per
+		return prisma.permission.findFirst({
+			where: {
+				AND: [
+					{
+						entity,
+						access,
+						action,
+					},
+				],
+			},
+		})
+	})
 
-	return json({ result: { ok: true }, data: value })
+	const permissionsData = await Promise.all(queryPermissions)
+
+	if (permissionsData.length !== permissions.length) {
+		return json({
+			result: { ok: false },
+			message: 'Some permissions does not exist',
+		})
+	}
+
+	let role: Role
+	// create new roles
+	if (value.id) {
+		role = await prisma.role.update({
+			where: {
+				id: value.id,
+			},
+			data: {
+				name,
+				description: description ?? '',
+				permissions: {
+					connect: permissionsData.map((per) => ({ id: per!.id })),
+				},
+			},
+		})
+	} else {
+		role = await prisma.role.create({
+			data: {
+				name,
+				description,
+				permissions: {
+					connect: permissionsData.map((per) => ({ id: per!.id })),
+				},
+			},
+		})
+	}
+
+	return json({ result: { ok: true }, data: role })
 }
 
 export type RoleLoaderData = Awaited<
@@ -93,13 +175,15 @@ const columns: ColumnDef<RoleLoaderData>[] = [
 				aria-label="Select all"
 			/>
 		),
-		cell: ({ row }) => (
-			<Checkbox
-				checked={row.getIsSelected()}
-				onCheckedChange={(value) => row.toggleSelected(!!value)}
-				aria-label="Select row"
-			/>
-		),
+		cell: ({ row: { getIsSelected, toggleSelected, original } }) => {
+			return (
+				<Checkbox
+					checked={getIsSelected()}
+					onCheckedChange={(value) => toggleSelected(!!value)}
+					aria-label="Select row"
+				/>
+			)
+		},
 		enableSorting: false,
 		enableHiding: false,
 	},
@@ -158,16 +242,13 @@ const columns: ColumnDef<RoleLoaderData>[] = [
 
 export default function AdminRoles() {
 	const { roles, metadata } = useLoaderData<typeof loader>()
-	const ref = React.useRef<DataTableRef>(null)
 	const [selectedRoles, setSelectedRoles] = useState<RoleLoaderData[]>([])
 	const [updateOpen, setUpdateOpen] = useState(false)
-	// const [deleteOpen, setDeleteOpen] = useState(false)
 	const firstSelected = useMemo(() => selectedRoles[0], [selectedRoles])
 
 	const handleSetSelect = useCallback(
 		(obj: RowSelectionState) => {
 			const ids = Object.keys(obj)
-			console.log({ ids, obj })
 			let newSelectedUsers = roles.filter((user) => ids.includes(user.id))
 			setSelectedRoles(newSelectedUsers as any)
 		},
@@ -204,14 +285,13 @@ export default function AdminRoles() {
 					</div>
 				}
 			/>
-			{/* {firstSelected && (
-				<DetailPanel
-					role={firstSelected}
-					onEdited={() => {}}
-					open={updateOpen}
-					setOpen={setUpdateOpen}
-				/>
-			)} */}
+			{/* EDIT PERMISSION */}
+			<CreateRolePanel
+				defaultValue={firstSelected}
+				open={updateOpen}
+				setOpen={setUpdateOpen}
+				type="update"
+			/>
 		</div>
 	)
 }

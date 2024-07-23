@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import SlidePanel from '#app/components/drawer.js'
-import { Form, useLocation } from '@remix-run/react'
+import { Form, useActionData, useLocation } from '@remix-run/react'
 import {
 	FieldMetadata,
 	getFieldsetProps,
@@ -27,8 +27,11 @@ import {
 } from '#app/components/ui/table/index.js'
 import Toggle from '#app/components/ui/toggle.js'
 import { useState } from 'react'
+import { useIsPending } from '#app/utils/misc.js'
+import { action } from './roles'
 
 export const CreateNewRoleSchema = z.object({
+	id: z.string().optional(),
 	name: z.string(),
 	description: z.string().optional(),
 	permissions: z.array(
@@ -37,6 +40,7 @@ export const CreateNewRoleSchema = z.object({
 			entity: z.string().optional(),
 			action: z.string().optional(),
 			access: z.string().optional(),
+			id: z.string().optional(),
 		}),
 	),
 })
@@ -44,44 +48,79 @@ type CreateNewRoleSchema = z.infer<typeof CreateNewRoleSchema>
 
 type CreatePanelProps = {
 	defaultValue?: CreateNewRoleSchema
+	open?: boolean
+	setOpen?: (open: boolean) => void
+	type?: 'create' | 'update'
 }
 export function CreateRolePanel(props: CreatePanelProps) {
+	const { open, setOpen, type = 'create' } = props
+	const actionData = useActionData<typeof action>()
 	const [form, fields] = useForm({
-		id: 'create-role',
+		id:
+			type === 'update'
+				? `update-role-${props.defaultValue?.id}`
+				: 'create-role',
 		constraint: getZodConstraint(CreateNewRoleSchema),
 		onValidate: ({ formData: values }) => {
 			return parseWithZod(values, {
 				schema: CreateNewRoleSchema,
 			})
 		},
-		// lastResult: actionData?.user as any,
-		defaultValue: props.defaultValue ?? {
-			permissions:
-				props.defaultValue ??
-				ENTITIES.flatMap((entity) =>
-					ACTIONS.map((action) => ({
-						entity,
-						action,
-						access: 'own',
-					})),
-				),
-		},
+		lastResult: actionData?.result as any,
+		defaultValue: props.defaultValue
+			? {
+					...props.defaultValue,
+					permissions: ENTITIES.flatMap((entity) =>
+						ACTIONS.map((action) => {
+							const entityAction = props.defaultValue?.permissions.find(
+								(p) => p.entity === entity && p.action === action,
+							)
+							return {
+								entity,
+								action,
+								enabled: entityAction ? 'on' : undefined,
+								access: entityAction?.access ?? 'own',
+							}
+						}),
+					),
+				}
+			: {
+					permissions:
+						props.defaultValue ??
+						ENTITIES.flatMap((entity) =>
+							ACTIONS.map((action) => ({
+								entity,
+								action,
+								access: 'own',
+							})),
+						),
+				},
 		shouldValidate: 'onBlur',
 	})
 
 	const location = useLocation()
 	const permissionsFieldList = fields.permissions.getFieldList()
+	const isPending = useIsPending({
+		formAction: `/admin/roles${location.search}`,
+		formMethod: 'POST',
+	})
+	const isUpdateDisabled =
+		props.defaultValue?.name === 'admin' || props.defaultValue?.name === 'user'
 
 	return (
 		<SlidePanel
-			title={`Create new role`}
+			title={type === 'create' ? `Create new role` : `Update role`}
+			open={open}
+			setOpen={setOpen}
 			trigger={
-				<Button.Root>
-					<Button.Icon type="leading">
-						<Icon name="plus" />
-					</Button.Icon>
-					<Button.Label>Create Role</Button.Label>
-				</Button.Root>
+				type === 'create' ? (
+					<Button.Root>
+						<Button.Icon type="leading">
+							<Icon name="plus" />
+						</Button.Icon>
+						<Button.Label>Create Role</Button.Label>
+					</Button.Root>
+				) : undefined
 			}
 		>
 			<div className="flex max-w-lg flex-1 flex-col overflow-y-auto">
@@ -89,75 +128,91 @@ export function CreateRolePanel(props: CreatePanelProps) {
 					{...getFormProps(form)}
 					method="POST"
 					action={`/admin/roles${location.search}`}
-					className="flex w-full flex-1 flex-col"
+					className="w-full flex-1"
 				>
-					<div className="w-full flex-1 space-y-4">
-						<HoneypotInputs />
-						<Field
-							labelProps={{
-								htmlFor: fields.name.id,
-								children: 'Role name',
-							}}
-							inputProps={{
-								...getInputProps(fields.name, {
-									type: 'text',
-									required: true,
-								}),
-								id: fields.name.id,
-								placeholder: 'Role name',
-							}}
-							errors={fields.name.errors}
-						/>
-						<TextareaField
-							labelProps={{
-								htmlFor: fields.description.id,
-								children: 'Description',
-							}}
-							textareaProps={{
-								...getInputProps(fields.description, {
-									type: 'text',
-									required: true,
-								}),
-								id: fields.description.id,
-								placeholder: 'Description',
-							}}
-							errors={fields.description.errors}
-						/>
-						<Table>
-							<TableHeader>
-								<TableRow>
-									<TableHead></TableHead>
-									{ACTIONS.map((action) => (
-										<TableHead
-											key={action + 'header'}
-											className={
-												'relative uppercase [&_svg]:inset-0 [&_svg]:right-0 [&_svg]:m-auto'
-											}
-										>
-											{action}
-										</TableHead>
-									))}
-									<TableHead>Full access</TableHead>
-								</TableRow>
-							</TableHeader>
-							<TableBody>
-								{ENTITIES.map((entity, i) => {
-									return (
-										<PermissionRow
-											fieldSet={
-												permissionsFieldList.splice(0, ACTIONS.length) as any
-											}
-											entity={entity}
-											key={entity}
-										/>
-									)
-								})}
-							</TableBody>
-						</Table>
-					</div>
-					<Button.Root type="submit" intent="primary" className="w-full">
-						Create Role
-					</Button.Root>
+					<fieldset
+						disabled={isUpdateDisabled || isPending}
+						className="flex h-full w-full flex-col"
+					>
+						<div className="w-full flex-1 space-y-4">
+							<input hidden {...getInputProps(fields.id, { type: 'text' })} />
+							<HoneypotInputs />
+							<Field
+								labelProps={{
+									htmlFor: fields.name.id,
+									children: 'Role name',
+								}}
+								inputProps={{
+									...getInputProps(fields.name, {
+										type: 'text',
+										required: true,
+									}),
+									id: fields.name.id,
+									placeholder: 'Role name',
+								}}
+								errors={fields.name.errors}
+							/>
+							<TextareaField
+								labelProps={{
+									htmlFor: fields.description.id,
+									children: 'Description',
+								}}
+								textareaProps={{
+									...getInputProps(fields.description, {
+										type: 'text',
+										required: true,
+									}),
+									id: fields.description.id,
+									placeholder: 'Description',
+								}}
+								errors={fields.description.errors}
+							/>
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead></TableHead>
+										{ACTIONS.map((action) => (
+											<TableHead
+												key={action + 'header'}
+												className={
+													'relative uppercase [&_svg]:inset-0 [&_svg]:right-0 [&_svg]:m-auto'
+												}
+											>
+												{action}
+											</TableHead>
+										))}
+										<TableHead>Full access</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{ENTITIES.map((entity, i) => {
+										return (
+											<PermissionRow
+												fieldSet={
+													permissionsFieldList.splice(0, ACTIONS.length) as any
+												}
+												entity={entity}
+												key={entity}
+											/>
+										)
+									})}
+								</TableBody>
+							</Table>
+						</div>
+						<Button.Root
+							type="submit"
+							intent="primary"
+							className="w-full"
+							disabled={isPending}
+						>
+							{
+								{
+									create: 'Create Role',
+									update: 'Update Role',
+								}[type]
+							}
+						</Button.Root>
+					</fieldset>
 				</Form>
 			</div>
 		</SlidePanel>
@@ -165,12 +220,7 @@ export function CreateRolePanel(props: CreatePanelProps) {
 }
 
 type PermissionRowProps = {
-	fieldSet: FieldMetadata<{
-		entity: string | undefined
-		action: string | undefined
-		access: string | undefined
-		enabled: string | undefined
-	}>[]
+	fieldSet: FieldMetadata<CreateNewRoleSchema['permissions'][0]>[]
 	entity: string
 	defaultChecked?: boolean
 }
@@ -178,16 +228,20 @@ function PermissionRow({
 	fieldSet,
 	entity,
 	defaultChecked,
-}: PermissionRowProps) {
+}: Readonly<PermissionRowProps>) {
+	console.log({ fieldSet: fieldSet[0]?.initialValue })
+	const [isSelect, setIsSelect] = useState(
+		defaultChecked ?? fieldSet[0]?.initialValue?.access === 'any',
+	)
 	if (!fieldSet) return
-	const [isSelect, setIsSelect] = useState(defaultChecked ?? false)
 	return (
 		<TableRow key={entity}>
 			<TableCell>
 				<Label>{uppercaseFirstLetter(entity)}</Label>
 			</TableCell>
 			{ACTIONS.map((action, ai) => {
-				const fieldData = fieldSet[ai]!
+				const fieldData = fieldSet[ai]
+				if (!fieldData) return null
 				const field = fieldData.getFieldset()
 				return (
 					<TableCell key={action}>
@@ -200,6 +254,7 @@ function PermissionRow({
 								...(getInputProps(field.enabled, {
 									type: 'checkbox',
 								}) as any),
+								defaultChecked: fieldData.initialValue?.enabled === 'on',
 							}}
 							errors={fieldData?.errors}
 						/>
@@ -208,7 +263,7 @@ function PermissionRow({
 							{...getInputProps(field.action, { type: 'text' })}
 							value={fieldData.value?.enabled && action}
 						/>
-
+						<input hidden {...getInputProps(field.id, { type: 'text' })} />
 						<input hidden {...getInputProps(field.entity, { type: 'text' })} />
 						<input
 							hidden
@@ -223,6 +278,7 @@ function PermissionRow({
 					onCheckedChange={(value) => {
 						setIsSelect(value)
 					}}
+					checked={isSelect}
 				>
 					<Toggle.Thumb />
 				</Toggle.Root>

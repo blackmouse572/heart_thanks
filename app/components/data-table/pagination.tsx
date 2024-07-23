@@ -81,7 +81,7 @@ function TablePagination({ metadata }: PaginationProps) {
 				))}
 
 				<PaginationItem
-					key={'prev'}
+					key={'next'}
 					onClick={() => {
 						getPaginationHref(getCurrentPage(metadata) + 1)
 					}}
