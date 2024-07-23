@@ -63,6 +63,33 @@ async function seed() {
 			},
 		},
 	})
+
+	// like user but transaction permission should be any
+	await prisma.role.create({
+		data: {
+			name: 'reviewer',
+			permissions: {
+				connect: await prisma.permission.findMany({
+					select: { id: true },
+					where: {
+						OR: [
+							{
+								access: 'own',
+								entity: {
+									not: 'transaction',
+								},
+							},
+							{
+								access: 'any',
+								entity: 'transaction',
+							},
+						],
+					},
+				}),
+			},
+		},
+	})
+
 	console.timeEnd('👑 Created roles...')
 
 	const totalUsers = seedUsers.length
