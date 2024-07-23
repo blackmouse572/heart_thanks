@@ -11,6 +11,7 @@ import {
 	type TextAlignProp,
 	type TextWeightProp,
 } from '@tailus/themer'
+import { cn } from '#app/utils/misc.js'
 
 interface AlertDialogProps
 	extends React.ComponentProps<typeof AlertDialogPrimitive.Root> {}
@@ -31,7 +32,7 @@ const AlertDialogOverlay = React.forwardRef<
 		<AlertDialogPrimitive.Overlay
 			{...props}
 			ref={forwardedRef}
-			className={overlay({ className })}
+			className={overlay({ className: cn('z-10', className) })}
 		/>
 	)
 })
@@ -51,7 +52,7 @@ const AlertDialogContent = React.forwardRef<
 		<AlertDialogPrimitive.Content
 			{...props}
 			ref={forwardedRef}
-			className={content({ fancy, mixed, className })}
+			className={content({ fancy, mixed, className: cn('z-[11]', className) })}
 		/>
 	)
 })
