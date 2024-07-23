@@ -16,6 +16,8 @@ function Tooltip({ children, content, contentProps, ...props }: TooltipProp) {
 				</TooltipPrimative.Trigger>
 				<TooltipPrimative.Portal>
 					<TooltipPrimative.Content
+						inverted={false}
+						fancy
 						{...contentProps}
 						className={cn('z-[12]', contentProps?.className)}
 					>

@@ -1,6 +1,7 @@
 import Checkbox from '#app/components/checkbox.js'
 import { GeneralErrorBoundary } from '#app/components/error-boundary.tsx'
 import { ErrorList } from '#app/components/forms.tsx'
+import Tooltip from '#app/components/tooltip.js'
 import Aligner from '#app/components/ui/aligner.js'
 import Badge from '#app/components/ui/badge.js'
 import Banner from '#app/components/ui/banner.js'
@@ -19,11 +20,14 @@ import { Text } from '#app/components/ui/typography/text.js'
 import { Title } from '#app/components/ui/typography/title.js'
 import UserCard from '#app/components/ui/user-hover-card.js'
 import UserAvatar from '#app/components/user-avatar.js'
-import { confirmTransferHandler } from '#app/routes/transfer+/transfer.server.js'
+import {
+	cancelTransferHandler,
+	confirmTransferHandler,
+} from '#app/routes/transfer+/transfer.server.js'
 import { requireUserId } from '#app/utils/auth.server.ts'
 import { prisma } from '#app/utils/db.server.ts'
 import { useCopyToClipboard } from '#app/utils/hooks/useCopy.js'
-import { useIsPending } from '#app/utils/misc.tsx'
+import { useDoubleCheck, useIsPending } from '#app/utils/misc.tsx'
 import {
 	requireUserWithPermission,
 	requireUserWithRole,
@@ -44,10 +48,16 @@ import {
 	useLoaderData,
 	type MetaFunction,
 } from '@remix-run/react'
+import { MouseButtonFlip } from '@testing-library/user-event/dist/cjs/system/pointer/buttons.js'
 import { formatDistanceToNow } from 'date-fns'
 import { useCallback, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { z } from 'zod'
+import CancelHistoryAlertDialog from './CancelHistory'
+import {
+	ENUM_TRANSACTION_STATUS,
+	transactionStatusToIntent,
+} from '#app/utils/transaction.js'
 
 export async function loader({ params }: LoaderFunctionArgs) {
 	const select = {
@@ -88,14 +98,16 @@ export async function loader({ params }: LoaderFunctionArgs) {
 	})
 }
 
-const ENUM_FORM_INTENT = {
+export const ENUM_HISTORY_FORM_INTENT = {
 	MARK_AS_REVIEWED: 'MARK_AS_REVIEWED',
 	ADMIN_MARK_AS_REVIEWED: 'ADMIN_MARK_AS_REVIEWED',
+	MARK_AS_CANCELLED: 'MARK_AS_CANCELLED',
 }
 const AdminMarkAsReviewedSchema = z.object({
 	intent: z.enum([
-		ENUM_FORM_INTENT.MARK_AS_REVIEWED,
-		ENUM_FORM_INTENT.ADMIN_MARK_AS_REVIEWED,
+		ENUM_HISTORY_FORM_INTENT.MARK_AS_REVIEWED,
+		ENUM_HISTORY_FORM_INTENT.ADMIN_MARK_AS_REVIEWED,
+		ENUM_HISTORY_FORM_INTENT.MARK_AS_CANCELLED,
 	]),
 	transactionId: z.string(),
 	changeToAdmin: z.boolean().default(false), // this will change reviewBy to admin (currentUser)
@@ -105,7 +117,7 @@ export async function action({ request }: ActionFunctionArgs) {
 	const userId = await requireUserId(request)
 	const formData = await request.formData()
 	const intent = formData.get('intent') as string
-	if (intent === ENUM_FORM_INTENT.ADMIN_MARK_AS_REVIEWED) {
+	if (intent === ENUM_HISTORY_FORM_INTENT.ADMIN_MARK_AS_REVIEWED) {
 		const submission = parseWithZod(formData, {
 			schema: AdminMarkAsReviewedSchema,
 		})
@@ -129,7 +141,6 @@ export async function action({ request }: ActionFunctionArgs) {
 		})
 		invariantResponse(note, 'Not found', { status: 404 })
 
-		// const isOwner = note.ownerId === userId || note.reviewBy?.id === userId
 		const currentUser = await prisma.user.findUnique({
 			where: { id: userId },
 		})
@@ -137,10 +148,6 @@ export async function action({ request }: ActionFunctionArgs) {
 		invariantResponse(currentUser, 'Unauthorized', { status: 403 })
 
 		await requireUserWithRole(request, 'admin')
-		// await requireUserWithPermission(
-		// 	request,
-		// 	isOwner ? `update:transaction:own` : `update:transaction:any`,
-		// )
 
 		await confirmTransferHandler({
 			currentUser,
@@ -152,7 +159,7 @@ export async function action({ request }: ActionFunctionArgs) {
 			title: 'Success',
 			description: 'Transaction has been reviewed',
 		})
-	} else if (intent === ENUM_FORM_INTENT.MARK_AS_REVIEWED) {
+	} else if (intent === ENUM_HISTORY_FORM_INTENT.MARK_AS_REVIEWED) {
 		const submission = parseWithZod(formData, {
 			schema: AdminMarkAsReviewedSchema,
 		})
@@ -198,6 +205,52 @@ export async function action({ request }: ActionFunctionArgs) {
 			title: 'Success',
 			description: 'Transaction has been reviewed',
 		})
+	} else if (intent === ENUM_HISTORY_FORM_INTENT.MARK_AS_CANCELLED) {
+		const submission = parseWithZod(formData, {
+			schema: AdminMarkAsReviewedSchema,
+		})
+		if (submission.status !== 'success') {
+			return json(
+				{ result: submission.reply() },
+				{ status: submission.status === 'error' ? 400 : 200 },
+			)
+		}
+
+		const { transactionId: noteId } = submission.value
+
+		const note = await prisma.transactions.findFirst({
+			select: {
+				id: true,
+				ownerId: true,
+				owner: { select: { username: true } },
+				reviewBy: { select: { id: true, username: true } },
+			},
+			where: { id: noteId },
+		})
+		invariantResponse(note, 'Not found', { status: 404 })
+
+		const isOwner = note.reviewBy?.id === userId
+		const currentUser = await prisma.user.findUnique({
+			where: { id: userId },
+		})
+
+		invariantResponse(currentUser, 'Unauthorized', { status: 403 })
+
+		await requireUserWithPermission(
+			request,
+			isOwner ? `update:transaction:own` : `update:transaction:any`,
+		)
+
+		await cancelTransferHandler({
+			currentUser,
+			transactionId: noteId,
+		})
+
+		return redirectWithToast(`/history/${note.id}`, {
+			type: 'error',
+			title: 'Success',
+			description: 'Transaction has been canned',
+		})
 	}
 
 	return json(
@@ -236,7 +289,35 @@ export default function NoteRoute() {
 	}, [])
 
 	const renderReviewSection = useMemo(() => {
-		if (note.reviewed)
+		if (note.status === ENUM_TRANSACTION_STATUS.FAILED) {
+			return (
+				<Banner.Root intent="danger">
+					<Banner.Content>
+						<Banner.Icon>
+							<Icon name="x" className="size-5 text-[--body-text-color]" />
+						</Banner.Icon>
+						<div className="space-y-2">
+							<Title>Transaction canceled</Title>
+							<Text>
+								This transaction has been canceled by{' '}
+								<UserCard
+									user={note.reviewBy as any}
+									linkProps={{
+										intent: 'danger',
+										variant: 'underlined',
+										href: `/users/${note.reviewBy?.username}`,
+									}}
+								/>{' '}
+								{formatDistanceToNow(new Date(note.reviewedAt!), {
+									includeSeconds: true,
+									addSuffix: true,
+								})}
+							</Text>
+						</div>
+					</Banner.Content>
+				</Banner.Root>
+			)
+		} else if (note.reviewed)
 			return (
 				<Banner.Root intent="success">
 					<Banner.Content>
@@ -324,16 +405,33 @@ export default function NoteRoute() {
 							<Text size={'sm'} className="flex items-center gap-2">
 								# {note.id}
 							</Text>
-							<Button.Root
-								intent={isCopied ? 'success' : 'gray'}
-								variant="ghost"
-								onClick={copyId}
-								size="xs"
-							>
-								<Button.Icon type="only">
-									<Icon name={isCopied ? 'clipboard-check' : 'clipboard'} />
-								</Button.Icon>
-							</Button.Root>
+							<div className="flex gap-1">
+								<Tooltip content="Copy ID">
+									<Button.Root
+										intent={isCopied ? 'success' : 'gray'}
+										variant="ghost"
+										onClick={copyId}
+										size="xs"
+									>
+										<Button.Icon type="only">
+											<Icon name={isCopied ? 'clipboard-check' : 'clipboard'} />
+										</Button.Icon>
+									</Button.Root>
+								</Tooltip>
+								{note.reviewed === false &&
+									note.status !== ENUM_TRANSACTION_STATUS.FAILED && (
+										<>
+											<Tooltip content="Edit">
+												<Button.Root intent={'gray'} variant="ghost" size="xs">
+													<Button.Icon type="only">
+														<Icon name={'pencil-2'} />
+													</Button.Icon>
+												</Button.Root>
+											</Tooltip>
+											<CancelHistoryAlertDialog id={note.id} />
+										</>
+									)}
+							</div>
 						</div>
 						<Title>{note.title}</Title>
 						<SeparatorRoot className="my-2" />
@@ -354,7 +452,7 @@ export default function NoteRoute() {
 					<div>
 						<UserAvatar
 							imageId={note.owner.image?.id}
-							title={note.owner.name || note.owner.username}
+							title={note.owner.name ?? note.owner.username}
 						/>
 						<div className="relative">
 							<SeparatorRoot
@@ -373,7 +471,7 @@ export default function NoteRoute() {
 						</div>
 						<UserAvatar
 							imageId={note.receiver.image?.id}
-							title={note.receiver.name || note.receiver.username}
+							title={note.receiver.name ?? note.receiver.username}
 						/>
 					</div>
 					<SeparatorRoot className="my-4" />
@@ -397,6 +495,7 @@ export default function NoteRoute() {
 								{note.reviewed === true ? 'YES' : 'NO'}
 							</Badge>
 						</li>
+
 						<li className="flex items-center justify-between gap-4">
 							<Text size="sm" weight="bold">
 								Review At
@@ -416,6 +515,18 @@ export default function NoteRoute() {
 						</li>
 						<li className="flex items-center justify-between gap-4">
 							<Text size="sm" weight="bold">
+								Status
+							</Text>
+							<SeparatorRoot dashed />
+							<Badge
+								size="xs"
+								intent={transactionStatusToIntent(note.status as any)}
+							>
+								{note.status}
+							</Badge>
+						</li>
+						<li className="flex items-center justify-between gap-4">
+							<Text size="sm" weight="bold">
 								Review By
 							</Text>
 							<SeparatorRoot dashed />
@@ -424,15 +535,15 @@ export default function NoteRoute() {
 									<Links
 										size="sm"
 										className="text-nowrap"
-										href={`/users/${note.reviewBy?.id}`}
+										href={`/users/${note.reviewBy?.username}`}
 									>
-										{note.reviewBy?.name || note.reviewBy?.username}
+										{note.reviewBy?.name ?? note.reviewBy?.username}
 									</Links>
 								</HoverCard.Trigger>
 								<HoverCard.Content fancy className="max-w-[250px]">
 									<UserAvatar
 										imageId={note.reviewBy?.image?.id}
-										title={note.reviewBy?.name || note.reviewBy?.username}
+										title={note.reviewBy?.name ?? note.reviewBy?.username}
 										description={note.reviewBy?.username}
 									/>
 								</HoverCard.Content>
@@ -463,34 +574,50 @@ export default function NoteRoute() {
 								to <Code intent="accent">completed</Code> without reviewer
 								permission
 							</Caption>
-							<Form method="POST" action={`/history/${note.id}`} className="">
-								<input
-									type="hidden"
-									name="intent"
-									value={ENUM_FORM_INTENT.ADMIN_MARK_AS_REVIEWED}
-								/>
-								<input type="hidden" name="transactionId" value={note.id} />
-								<Button.Root
-									intent="secondary"
-									type="submit"
-									className="w-full"
-									size="sm"
-									variant="solid"
-								>
-									<Button.Icon type="leading">
-										<Icon
-											name="circle-dashed-check"
-											className="scale-125 max-md:scale-150"
-										/>
-									</Button.Icon>
-									<Button.Label>Mark as reviewed</Button.Label>
-								</Button.Root>
-							</Form>
+							<AdminMarkAsReviewed id={note.id} />
 						</Card>
 					)}
 				</Card>
 			</div>
 		</div>
+	)
+}
+
+export function AdminMarkAsReviewed({ id }: { id: string }) {
+	const dc = useDoubleCheck()
+	const isPending = useIsPending({
+		formAction: '/history/' + id,
+		formMethod: 'POST',
+	})
+
+	return (
+		<Form method="POST" action={`/history/${id}`} className="">
+			<input
+				type="hidden"
+				name="intent"
+				value={ENUM_HISTORY_FORM_INTENT.ADMIN_MARK_AS_REVIEWED}
+			/>
+			<input type="hidden" name="transactionId" value={id} />
+			<StatusButton
+				{...dc.getButtonProps({
+					className: 'w-full',
+				})}
+				status={isPending ? 'pending' : 'idle'}
+				intent="secondary"
+				type="submit"
+				size="sm"
+				variant="solid"
+			>
+				{!isPending && (
+					<Button.Icon type="leading">
+						<Icon name="circle-dashed-check" />
+					</Button.Icon>
+				)}
+				<Button.Label>
+					{dc.doubleCheck ? 'Are you sure?' : 'Mark as reviewed'}
+				</Button.Label>
+			</StatusButton>
+		</Form>
 	)
 }
 
@@ -564,7 +691,7 @@ export function MarkAsReviewed({ noteId }: { noteId: string }) {
 				<input
 					type="hidden"
 					name="intent"
-					value={ENUM_FORM_INTENT.MARK_AS_REVIEWED}
+					value={ENUM_HISTORY_FORM_INTENT.MARK_AS_REVIEWED}
 				/>
 				<input type="hidden" name="transactionId" value={noteId} />
 				<Button.Root

@@ -177,7 +177,7 @@ export async function cancelTransferHandler({
 				owner: { connect: { id: owner.id } },
 				status: ENUM_TRANSACTION_STATUS.FAILED,
 				amount,
-				reviewed: true,
+				reviewed: false,
 				reviewedAt: new Date(),
 				reviewBy: { connect: { id: currentUser.id } },
 			},

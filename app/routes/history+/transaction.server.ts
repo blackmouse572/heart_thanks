@@ -1,5 +1,6 @@
 import { type Metadata } from '#app/utils/request.server.ts'
 import { prisma } from '#app/utils/db.server.js'
+import { ENUM_TRANSACTION_STATUS } from '#app/utils/transaction.js'
 export function getUserTransaction(
 	{ take, skip }: Metadata,
 	where?: Record<string, any>,
@@ -114,6 +115,7 @@ export function getTotalsRequireReview(userId?: string) {
 		where: {
 			reviewed: false,
 			reviewedById: userId,
+			status: ENUM_TRANSACTION_STATUS.PENDING,
 		},
 	})
 }
