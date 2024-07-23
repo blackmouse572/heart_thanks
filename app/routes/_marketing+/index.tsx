@@ -82,21 +82,8 @@ export default function Index() {
 						data-heading
 						className="animate-slide-top text-foreground xl:animate-slide-left mt-8 text-4xl font-medium [animation-delay:0.3s] [animation-fill-mode:backwards] md:text-5xl xl:mt-4 xl:text-6xl xl:[animation-delay:0.8s] xl:[animation-fill-mode:backwards]"
 					>
-						<a href="https://www.epicweb.dev/stack">The Epic Stack</a>
+						HEART THANKS
 					</h1>
-					<p
-						data-paragraph
-						className="animate-slide-top text-muted-foreground xl:animate-slide-left mt-6 text-xl/7 [animation-delay:0.8s] [animation-fill-mode:backwards] xl:mt-8 xl:text-xl/6 xl:leading-10 xl:[animation-delay:1s] xl:[animation-fill-mode:backwards]"
-					>
-						Check the{' '}
-						<a
-							className="underline hover:no-underline"
-							href="https://github.com/epicweb-dev/epic-stack/blob/main/docs/getting-started.md"
-						>
-							Getting Started guide
-						</a>{' '}
-						file for how to get your project off the ground!
-					</p>
 				</div>
 				<ul className="mt-16 space-y-5">
 					<div className="h-56 w-full sm:h-80 sm:min-w-[36rem] sm:max-w-2xl">
