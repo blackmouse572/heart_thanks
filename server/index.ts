@@ -10,6 +10,7 @@ import rateLimit from 'express-rate-limit'
 import getPort, { portNumbers } from 'get-port'
 import helmet from 'helmet'
 import morgan from 'morgan'
+import morganMiddleware from './utils/chalk-morgan.ts'
 
 installGlobals()
 
@@ -88,15 +89,7 @@ app.get(['/img/*', '/favicons/*'], (_req, res) => {
 })
 
 morgan.token('url', (req) => decodeURIComponent(req.url ?? ''))
-app.use(
-	morgan('tiny', {
-		skip: (req, res) =>
-			res.statusCode === 200 &&
-			(req.url?.startsWith('/resources/note-images') ||
-				req.url?.startsWith('/resources/user-images') ||
-				req.url?.startsWith('/resources/healthcheck')),
-	}),
-)
+app.use(morganMiddleware)
 
 app.use((_, res, next) => {
 	res.locals.cspNonce = crypto.randomBytes(16).toString('hex')
